@@ -1,8 +1,6 @@
+'use client';
+import SpinDJDashboard from '@/app/components/SpinDJDashboard';
+
 export default function Home() {
-  return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Spin DJ Pathways</h1>
-      <p>Dashboard coming soon...</p> 
-    </main>
-  )
+  return <SpinDJDashboard />;
 }
