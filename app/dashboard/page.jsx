@@ -1,5 +1,5 @@
 'use client';
-import SpinDJDashboard from '@/app/components/SpinDJDashboard';
+import SpinDJDashboard from '../components/SpinDJDashboard';
 export default function DashboardPage() {
   return <SpinDJDashboard />;
 }
