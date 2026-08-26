@@ -22,5 +22,5 @@
     "@types/react-dom": "^18",
     "eslint": "^9",
     "eslint-config-next": "latest"
-  }
+  } 
 }
