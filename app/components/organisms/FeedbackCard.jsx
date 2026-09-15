@@ -13,12 +13,7 @@ export default function FeedbackCard({ feedback, onViewAll }) {
   return (
     <Card className="flex flex-col" title="Coach's Feedback" icon="star">
       <div className="mb-3 flex items-center gap-[9px]">
-        <Avatar
-          name={feedback.coach}
-          src={feedback.coachAvatarUrl}
-          size={30}
-          ring
-        />
+        <Avatar name={feedback.coach} src={feedback.coachAvatarUrl} size={30} />
         <p className="m-0 text-[13px] font-bold">{feedback.coach}</p>
         <p className="m-0 ml-auto whitespace-nowrap text-[11px] text-muted">
           {feedback.date}
