@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import NavItem from '../molecules/NavItem';
 import Avatar from '../atoms/Avatar';
@@ -22,7 +22,10 @@ const DRAWER_ID = 'sidebar-drawer';
 export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Escape closes the mobile drawer.
+  const railRef = useRef(null);
+
+  // Escape, or a press anywhere outside the rail, closes the mobile dropdown —
+  // what anyone expects of a menu that floats over the page.
   useEffect(() => {
     if (!menuOpen) return undefined;
 
@@ -30,8 +33,17 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
       if (e.key === 'Escape') setMenuOpen(false);
     };
 
+    const onPointerDown = (e) => {
+      if (!railRef.current?.contains(e.target)) setMenuOpen(false);
+    };
+
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
   }, [menuOpen]);
 
   const handleTabChange = (id) => {
@@ -40,7 +52,10 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
   };
 
   return (
-    <aside className="sticky top-0 flex h-screen w-sidebar flex-[0_0_var(--spacing-sidebar)] flex-col overflow-hidden border-r border-line bg-surface px-3.5 pb-[18px] pt-[22px] max-[760px]:z-20 max-[760px]:block max-[760px]:h-auto max-[760px]:w-full max-[760px]:flex-none max-[760px]:border-b max-[760px]:border-b-line max-[760px]:border-r-0 max-[760px]:px-4 max-[760px]:py-2.5">
+    <aside
+      ref={railRef}
+      className="sticky top-0 flex h-screen w-sidebar flex-[0_0_var(--spacing-sidebar)] flex-col overflow-hidden border-r border-line bg-surface px-3.5 pb-[18px] pt-[22px] max-[760px]:z-30 max-[760px]:block max-[760px]:h-auto max-[760px]:w-full max-[760px]:flex-none max-[760px]:overflow-visible max-[760px]:border-b max-[760px]:border-b-line max-[760px]:border-r-0 max-[760px]:px-4 max-[760px]:py-2.5"
+    >
       {/* Soft lavender wash filling the foot of the rail. The crest is a drawn
           wave rather than an ellipse arc, so it reads as one gentle S across
           the full width instead of a dome rising out of the left edge. */}
@@ -81,9 +96,11 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
       <div
         id={DRAWER_ID}
+        /* Mobile: a dropdown anchored under the header bar — absolute, so it
+           floats over the page instead of pushing the dashboard down. */
         className={`contents ${
           menuOpen
-            ? 'max-[760px]:block max-[760px]:animate-drawer-in max-[760px]:pt-3 motion-reduce:animate-none'
+            ? 'max-[760px]:absolute max-[760px]:inset-x-0 max-[760px]:top-full max-[760px]:z-30 max-[760px]:block max-[760px]:animate-drawer-in max-[760px]:rounded-b-lg max-[760px]:border-b max-[760px]:border-line max-[760px]:bg-surface max-[760px]:p-4 max-[760px]:shadow-[0_18px_40px_rgba(20,18,31,0.16)] motion-reduce:animate-none'
             : 'max-[760px]:hidden'
         }`}
       >
