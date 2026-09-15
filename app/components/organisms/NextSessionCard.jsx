@@ -12,7 +12,7 @@ import SessionDetail from '../molecules/SessionDetail';
 export default function NextSessionCard({ session, onViewSchedule }) {
   return (
     <Card className="flex flex-col" title="Next Session" icon="calendar">
-      <div className="mb-4 flex items-center justify-between gap-2.5">
+      <div className="mb-5 flex items-center justify-between gap-2.5">
         <p className="m-0 text-[16px] font-extrabold">{session.dateLabel}</p>
         <span className="shrink-0 rounded-full bg-purple-50 px-[11px] py-1 text-[12.5px] font-bold text-purple">
           {session.timeLabel}

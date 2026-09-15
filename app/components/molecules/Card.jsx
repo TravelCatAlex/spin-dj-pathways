@@ -25,7 +25,7 @@ export default function Card({
   return (
     <section className={classes}>
       {(title || action) && (
-        <header className="mb-3.5 flex items-center justify-between gap-3">
+        <header className="mb-5 flex items-center justify-between gap-3">
           {title && <SectionTitle icon={icon}>{title}</SectionTitle>}
           {action}
         </header>
