@@ -1,6 +1,13 @@
+import './globals.css'
+
 export const metadata = {
   title: 'Spin DJ Pathways',
   description: 'DJ learning dashboard',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
