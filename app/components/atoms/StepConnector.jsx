@@ -2,13 +2,16 @@
 
 /**
  * ATOM — StepConnector
- * The line drawn between two StepDots.
+ * The rail between two StepDots. `filled` marks the travelled part of the
+ * timeline, so progress reads at a glance without counting ticks.
  */
-export default function StepConnector() {
+export default function StepConnector({ filled = false }) {
   return (
     <span
-      className="mt-[11px] h-0.5 min-w-2 flex-auto bg-white/25"
       aria-hidden="true"
+      className={`mt-3.5 h-[3px] min-w-2 flex-auto rounded-full transition-colors duration-200 ${
+        filled ? 'bg-purple' : 'bg-white/20'
+      }`}
     />
   );
 }

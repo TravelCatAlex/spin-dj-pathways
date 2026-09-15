@@ -41,10 +41,12 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
   return (
     <aside className="sticky top-0 flex h-screen w-sidebar flex-[0_0_var(--spacing-sidebar)] flex-col overflow-hidden border-r border-line bg-surface px-3.5 pb-[18px] pt-[22px] max-[760px]:z-20 max-[760px]:block max-[760px]:h-auto max-[760px]:w-full max-[760px]:flex-none max-[760px]:border-b max-[760px]:border-b-line max-[760px]:border-r-0 max-[760px]:px-4 max-[760px]:py-2.5">
-      {/* Soft lavender blob anchored to the bottom-left corner. */}
+      {/* Soft lavender wash filling the foot of the rail. It is a wide ellipse
+          pushed past both edges, so only its top arc crosses the rail — that
+          arc is the curved boundary behind the profile block. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[-60px] left-[-70px] h-[180px] w-[210px] rounded-full bg-[linear-gradient(135deg,#c9b3ff,#efe6ff)] opacity-55 max-[760px]:hidden"
+        className="pointer-events-none absolute inset-x-[-32%] bottom-[-140px] h-[420px] -rotate-3 rounded-[50%] bg-[linear-gradient(180deg,#dcd0f9_0%,#ece5fd_60%,#f1ecfe_100%)] max-[760px]:hidden"
       />
 
       <div className="max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3">
@@ -79,7 +81,9 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
           ))}
         </nav>
 
-        <div className="relative z-[1] mt-auto border-t border-line pt-4 max-[760px]:mt-3 max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3">
+        {/* No divider rule: the wash's curved edge does that job on desktop,
+            so the hairline only comes back once the wash is hidden. */}
+        <div className="relative z-[1] mt-auto pt-4 max-[760px]:mt-3 max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3 max-[760px]:border-t max-[760px]:border-line">
           <div className="mb-2 flex items-center gap-[9px] px-1.5 py-1 max-[760px]:mb-0">
             <Avatar name={user.firstName} src={user.avatarUrl} size={34} ring />
             <div>
@@ -92,7 +96,7 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
           </div>
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-[9px] text-[13px] text-ink-soft transition-[border-color,color] duration-150 ease-out hover:border-purple hover:text-purple max-[760px]:w-auto"
+            className="flex w-full items-center gap-2 rounded-[10px] border border-transparent bg-transparent px-3 py-[9px] text-[13px] text-ink-soft transition-colors duration-150 ease-out hover:text-purple max-[760px]:w-auto max-[760px]:border-line max-[760px]:bg-surface"
             onClick={onLogout}
           >
             <Icon name="logout" /> Log out

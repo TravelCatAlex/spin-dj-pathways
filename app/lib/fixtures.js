@@ -75,7 +75,14 @@ export const CURRENT_PROJECT = {
   id: 'proj-1',
   title: 'My First Vlog',
   icon: 'film',
-  stages: ['Idea', 'Planning', 'Recording', 'Editing', 'Review', 'Finished'],
+  stages: [
+    { id: 'idea', label: 'Idea', icon: 'idea' },
+    { id: 'planning', label: 'Planning', icon: 'plan' },
+    { id: 'recording', label: 'Recording', icon: 'mic' },
+    { id: 'editing', label: 'Editing', icon: 'editing' },
+    { id: 'review', label: 'Review', icon: 'review' },
+    { id: 'finished', label: 'Finished', icon: 'finished' },
+  ],
   currentStageIndex: 2,
   nextAction: 'Record your intro segment',
 };

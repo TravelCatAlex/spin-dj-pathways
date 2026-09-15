@@ -1,34 +1,40 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import Icon from './Icon';
 
 const STATES = {
-  done: 'bg-white text-purple-700',
-  current: 'bg-orange shadow-[0_0_0_4px_rgba(255,159,28,0.28)]',
-  todo: 'bg-white/[0.14] border border-white/[0.32]',
+  // Completed: solid violet disc, white tick.
+  done: 'bg-purple text-white',
+  // Current: white disc with the stage's own icon, lifted by a halo.
+  current:
+    'bg-white text-purple-700 ring-4 ring-white/25 shadow-[0_2px_10px_rgba(0,0,0,0.25)]',
+  // Upcoming: hollow, the icon only hinted at.
+  todo: 'border-2 border-white/30 text-white/45',
 };
 
 /**
  * ATOM — StepDot
- * One node of the project stage stepper. state: done | current | todo.
- * Completed steps use a vector check; the current step carries an inner dot.
+ * One node of the project timeline. state: done | current | todo.
+ * Completed nodes show a tick; the rest show the stage's own icon, so the
+ * timeline reads as a sequence of activities rather than anonymous dots.
  */
-export default function StepDot({ state = 'todo', label }) {
+export default function StepDot({ state = 'todo', icon, label }) {
+  const isCurrent = state === 'current';
+
   return (
     <div
       role="listitem"
-      className={`grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold text-white ${
-        STATES[state] ?? STATES.todo
-      }`}
+      className={`grid shrink-0 place-items-center rounded-full transition-all duration-200 ${
+        isCurrent ? 'h-8 w-8' : 'h-7 w-7'
+      } ${STATES[state] ?? STATES.todo}`}
       title={label}
-      aria-current={state === 'current' ? 'step' : undefined}
+      aria-current={isCurrent ? 'step' : undefined}
     >
-      {state === 'done' && (
-        <Check size={13} strokeWidth={3} aria-hidden="true" focusable="false" />
-      )}
-      {state === 'current' && (
-        <span className="h-2 w-2 rounded-full bg-white" aria-hidden="true" />
-      )}
+      <Icon
+        name={state === 'done' ? 'tick' : icon}
+        size={isCurrent ? 16 : 14}
+        strokeWidth={state === 'done' ? 3 : 2.2}
+      />
     </div>
   );
 }

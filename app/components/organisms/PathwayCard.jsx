@@ -47,7 +47,7 @@ export default function PathwayCard({ pathway, project, onStartNextStep }) {
         <Stepper steps={project.stages} currentIndex={project.currentStageIndex} />
 
         <StageCallout
-          stage={project.stages[project.currentStageIndex]}
+          stage={project.stages[project.currentStageIndex].label}
           nextAction={project.nextAction}
           onGo={onStartNextStep}
         />

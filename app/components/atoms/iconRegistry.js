@@ -1,4 +1,10 @@
 import {
+  Check,
+  Scissors,
+  ListChecks,
+  Lightbulb,
+  Flag,
+  Eye,
   ArrowRight,
   Award,
   BarChart3,
@@ -94,6 +100,16 @@ export const ICONS = {
   superhero: Shield,
   gaming: Gamepad2,
   youtube: Youtube,
+
+  // A bare tick, for when the circle is already drawn around it.
+  tick: Check,
+
+  // project stages
+  idea: Lightbulb,
+  plan: ListChecks,
+  editing: Scissors,
+  review: Eye,
+  finished: Flag,
 
   // affordances
   edit: Pencil,

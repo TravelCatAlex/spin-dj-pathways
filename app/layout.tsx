@@ -19,14 +19,18 @@ export const viewport = {
   initialScale: 1,
 }
 
+// Browser extensions (Bitdefender's bis_skin_checked, Grammarly, and so on)
+// inject attributes into the DOM before React hydrates, which React then
+// reports as a mismatch. Suppressing on the root elements silences that
+// class of false positive without hiding genuine mismatches in our own tree.
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={jakarta.variable}>
-      <body>{children}</body>
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }
