@@ -33,13 +33,13 @@ app/
 | `NavItem` | `Icon` + label, active state |
 | `ContextChip` | `Icon` + label-over-value |
 | `Stepper` | `StepDot` × n + `StepConnector` |
-| `StageCallout` | `Icon` + stage + next action |
-| `MediaCard` | `Icon`/thumbnail + `StatusBadge` + title + meta |
+| `StageCallout` | stage + next action + go button (white panel) |
+| `MediaCard` | thumbnail + scrim + `StatusBadge` + title + meta |
 | `ProgressItem` | `Icon` + title + description |
 | `SessionDetail` | `Icon` + label-over-value |
 | `OpportunityRow` | `Icon` + copy + `Button` toggle (stateless) |
 | `JourneyStep` | `Icon` circle + title + description + arrow |
-| `PathwayBannerArt` | decorative waveform/mic SVG |
+| `PathwayBanner` | hero artwork layer + legibility scrim |
 
 ## Organisms — the 12 sections
 

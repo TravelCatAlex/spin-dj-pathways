@@ -7,9 +7,9 @@ import { PATHWAY_BANNER } from '../../lib/fixtures';
  * MOLECULE — PathwayBanner
  * Full-bleed artwork behind the pathway hero card.
  *
- * next/image handles responsive sizing and AVIF/WebP conversion. A gradient
- * scrim over the left half keeps the heading legible on top of the artwork —
- * the source image is brightest on its right, where the mic sits.
+ * The artwork is fitted to the band's height and pinned right, so the mic is
+ * never sliced; the card's own purple fills the space to its left. A gradient
+ * scrim blends that seam and keeps the heading legible.
  */
 export default function PathwayBanner() {
   return (
@@ -20,8 +20,8 @@ export default function PathwayBanner() {
         fill
         priority
         quality={90}
-        sizes="(max-width: 1180px) 140vw, 100vw"
-        style={{ objectFit: 'cover', objectPosition: 'right center' }}
+        sizes="(max-width: 760px) 150vw, 700px"
+        style={{ objectFit: 'contain', objectPosition: 'right center' }}
       />
       <span className="pathway-card__scrim" />
     </div>
