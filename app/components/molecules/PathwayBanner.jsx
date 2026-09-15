@@ -1,9 +1,11 @@
 'use client';
 
 import Image from 'next/image';
+import Skeleton from '../atoms/Skeleton';
 import { m } from 'motion/react';
 import { PATHWAY_BANNER } from '../../lib/fixtures';
 import { heroArt } from '../../lib/motion';
+import { useImageLoaded } from '../../lib/useImageLoaded';
 
 /**
  * MOLECULE — PathwayBanner
@@ -20,21 +22,34 @@ import { heroArt } from '../../lib/motion';
  * is over the card or not.
  */
 export default function PathwayBanner() {
+  const { loaded, holderRef, imgProps } = useImageLoaded();
+
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div
+      ref={holderRef}
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden="true"
+    >
       {/* Base wash, sampled from the artwork's own left edge (#200671 ->
           #3f0e9a) so the two layers meet without a seam. */}
       <span className="absolute inset-0 bg-[radial-gradient(120%_150%_at_88%_45%,rgba(168,26,190,0.5)_0%,rgba(103,16,172,0.22)_38%,rgba(32,6,113,0)_68%),linear-gradient(95deg,#1d0569_0%,#290775_42%,#360a94_74%,#46109f_100%)]" />
 
+      {/* Sits above the wash so the band is never a flat colour while the
+          artwork downloads, and below the scrim so it darkens with it. */}
+      {!loaded && <Skeleton tone="dark" />}
+
       <m.div variants={heroArt} className="absolute inset-0 origin-right">
         <Image
+          {...imgProps}
           src={PATHWAY_BANNER.src}
           alt=""
           fill
           priority
           quality={90}
           sizes="(max-width: 760px) 200vw, (max-width: 1180px) 100vw, 1100px"
-          className="object-cover object-right"
+          className={`object-cover object-right transition-opacity duration-500 ease-out motion-reduce:transition-none ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
         />
       </m.div>
 
