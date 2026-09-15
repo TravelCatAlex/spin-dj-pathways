@@ -9,18 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "latest",
     "@supabase/supabase-js": "^2.45.0",
-    "lucide-react": "^0.377.0"
+    "lucide-react": "^0.377.0",
+    "next": "latest",
+    "react": "^18",
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^9",
-    "eslint-config-next": "latest"
-  } 
+    "eslint-config-next": "latest",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5"
+  }
 }
