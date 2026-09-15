@@ -41,13 +41,31 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
   return (
     <aside className="sticky top-0 flex h-screen w-sidebar flex-[0_0_var(--spacing-sidebar)] flex-col overflow-hidden border-r border-line bg-surface px-3.5 pb-[18px] pt-[22px] max-[760px]:z-20 max-[760px]:block max-[760px]:h-auto max-[760px]:w-full max-[760px]:flex-none max-[760px]:border-b max-[760px]:border-b-line max-[760px]:border-r-0 max-[760px]:px-4 max-[760px]:py-2.5">
-      {/* Soft lavender wash filling the foot of the rail. It is a wide ellipse
-          pushed past both edges, so only its top arc crosses the rail — that
-          arc is the curved boundary behind the profile block. */}
-      <span
+      {/* Soft lavender wash filling the foot of the rail. The crest is a drawn
+          wave rather than an ellipse arc, so it reads as one gentle S across
+          the full width instead of a dome rising out of the left edge. */}
+      <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-[-32%] bottom-[-140px] h-[420px] -rotate-3 rounded-[50%] bg-[linear-gradient(180deg,#dcd0f9_0%,#ece5fd_60%,#f1ecfe_100%)] max-[760px]:hidden"
-      />
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[230px] max-[760px]:hidden"
+      >
+        <svg
+          viewBox="0 0 216 230"
+          preserveAspectRatio="none"
+          className="h-full w-full"
+        >
+          <defs>
+            <linearGradient id="sidebar-wash" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#dcd0f9" />
+              <stop offset="60%" stopColor="#ece5fd" />
+              <stop offset="100%" stopColor="#f1ecfe" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0 46 C 54 6, 108 74, 162 40 C 184 26, 202 22, 216 26 L216 230 L0 230 Z"
+            fill="url(#sidebar-wash)"
+          />
+        </svg>
+      </div>
 
       <div className="max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3">
         <div className="mb-[22px] px-1.5 max-[760px]:mb-0 max-[760px]:p-0">
@@ -83,9 +101,9 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
         {/* No divider rule: the wash's curved edge does that job on desktop,
             so the hairline only comes back once the wash is hidden. */}
-        <div className="relative z-[1] mt-auto pt-4 max-[760px]:mt-3 max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3 max-[760px]:border-t max-[760px]:border-line">
-          <div className="mb-2 flex items-center gap-[9px] px-1.5 py-1 max-[760px]:mb-0">
-            <Avatar name={user.firstName} src={user.avatarUrl} size={34} ring />
+        <div className="relative z-[1] mt-auto pt-9 max-[760px]:mt-3 max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3 max-[760px]:border-t max-[760px]:border-line max-[760px]:pt-3">
+          <div className="mb-3 flex items-center gap-[11px] px-1.5 py-1 max-[760px]:mb-0">
+            <Avatar name={user.firstName} src={user.avatarUrl} size={38} ring />
             <div>
               <p className="m-0 text-[13px] font-bold">{user.firstName}</p>
               <p className="m-0 text-[11.5px] text-muted">{user.role}</p>

@@ -11,7 +11,7 @@ export default function TopBar({ user, dateLabel }) {
     <header className="mb-[18px] flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 className="m-0 mb-[3px] text-[25px] font-extrabold tracking-[-0.5px]">
-          Welcome back, {user.firstName}! <Icon name="wave" />
+          Welcome back, {user.firstName}!
         </h1>
         <p className="m-0 text-[13px] text-muted">
           Let&apos;s keep creating amazing things.
