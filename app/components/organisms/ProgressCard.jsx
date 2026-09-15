@@ -10,8 +10,8 @@ import ProgressItem from '../molecules/ProgressItem';
  */
 export default function ProgressCard({ items, onSeeAll }) {
   return (
-    <Card title="My Progress" icon="trending">
-      <div className="progress-list">
+    <Card className="flex flex-col" title="My Progress" icon="trending">
+      <div className="mb-[15px] flex flex-col gap-[13px]">
         {items.map((item) => (
           <ProgressItem
             key={item.id}
@@ -22,7 +22,7 @@ export default function ProgressCard({ items, onSeeAll }) {
           />
         ))}
       </div>
-      <Button variant="outline" block onClick={onSeeAll}>
+      <Button className="mt-auto" variant="outline" block onClick={onSeeAll}>
         See All Progress <Icon name="arrowRight" size={14} />
       </Button>
     </Card>

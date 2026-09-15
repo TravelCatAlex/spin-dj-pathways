@@ -6,10 +6,13 @@ import MediaCard from '../molecules/MediaCard';
 
 /**
  * ORGANISM — CreationsSection ("My Creations")
+ * The grid keeps its natural height inside the equal-height split row, so
+ * stretching it can't open a dead gap between each title and its date row.
  */
 export default function CreationsSection({ creations, onViewAll, onOpen }) {
   return (
     <Card
+      className="flex flex-col"
       title="My Creations"
       icon="film"
       action={
@@ -18,7 +21,9 @@ export default function CreationsSection({ creations, onViewAll, onOpen }) {
         </Button>
       }
     >
-      <div className="grid-media">
+      {/* Three across when there's room, dropping to two then one on its own —
+          below ~150px a thumbnail is too cramped to read. */}
+      <div className="grid grid-cols-3 content-start gap-4 max-[760px]:grid-cols-1">
         {creations.map((creation) => (
           <MediaCard
             key={creation.id}

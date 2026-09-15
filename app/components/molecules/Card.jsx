@@ -14,14 +14,18 @@ export default function Card({
   className = '',
   children,
 }) {
-  const classes = ['card', tinted ? 'card--tinted' : '', className]
+  const classes = [
+    'rounded-lg border p-[17px] shadow-sm',
+    tinted ? 'border-purple-100 bg-purple-50' : 'border-line bg-surface',
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
 
   return (
     <section className={classes}>
       {(title || action) && (
-        <header className="card__head">
+        <header className="mb-3.5 flex items-center justify-between gap-3">
           {title && <SectionTitle icon={icon}>{title}</SectionTitle>}
           {action}
         </header>

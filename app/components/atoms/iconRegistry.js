@@ -21,6 +21,7 @@ import {
   LogOut,
   MapPin,
   Mic,
+  MoveRight,
   Music,
   Pencil,
   Play,
@@ -99,4 +100,5 @@ export const ICONS = {
   chevronRight: ChevronRight,
   chevronDown: ChevronDown,
   arrowRight: ArrowRight,
+  arrowLong: MoveRight,
 };

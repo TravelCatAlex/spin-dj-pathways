@@ -37,6 +37,11 @@ const STUBS = {
   events: ['Events', 'Coming soon: event calendar and opportunities'],
 };
 
+/* Every section row shares one 12-column rhythm, so the columns line up
+   vertically down the page. Without this each row invented its own split
+   and the right-hand cards sat ~16px out of true with each other. */
+const ROW = 'mb-[18px] grid grid-cols-12 items-stretch gap-[18px]';
+
 /**
  * PAGE — StudentDashboardPage
  * Wires fixture data into organisms. Swap the fixture imports for API
@@ -59,27 +64,40 @@ export default function StudentDashboardPage({ onLogout }) {
 
           <ContextRow chips={CONTEXT_CHIPS} />
 
-          <div className="grid-hero">
+          {/* Pathway 8 | Next Session 4 — stacked below 1180px. */}
+          <div
+            className={`${ROW} [&>*:nth-child(1)]:col-span-8 [&>*:nth-child(2)]:col-span-4 max-[1180px]:[&>*:nth-child(1)]:col-span-12 max-[1180px]:[&>*:nth-child(2)]:col-span-12`}
+          >
             <PathwayCard pathway={CURRENT_PATHWAY} project={CURRENT_PROJECT} />
             <NextSessionCard session={NEXT_SESSION} />
           </div>
 
-          <div className="grid-three">
+          {/* Interests 4 | Progress 4 | Feedback 4 — the last aligns with
+              Next Session. Two per row below 980px, one below 760px. */}
+          <div className={`${ROW} [&>*]:col-span-4 max-[980px]:[&>*]:col-span-6 max-[760px]:[&>*]:col-span-12`}>
             <InterestsCard interests={INTERESTS} />
             <ProgressCard items={PROGRESS_ITEMS} />
             <FeedbackCard feedback={LATEST_FEEDBACK} />
           </div>
 
-          <div className="grid-split">
+          {/* Creations 6 | Opportunities 6 — even halves, equal height. */}
+          <div
+            className={`${ROW} [&>*:nth-child(1)]:col-span-7 [&>*:nth-child(2)]:col-span-5 max-[1180px]:[&>*:nth-child(1)]:col-span-12 max-[1180px]:[&>*:nth-child(2)]:col-span-12`}
+          >
             <CreationsSection creations={CREATIONS} />
             <OpportunitiesSection opportunities={OPPORTUNITIES} />
           </div>
+
           <JourneySection steps={PATHWAY_JOURNEY} />
         </>
       ) : (
         <>
-          <h1 className="stub__title">{stub[0]}</h1>
-          <div className="stub">{stub[1]}</div>
+          <h1 className="m-0 mb-5 text-left text-[24px] font-extrabold text-ink">
+            {stub[0]}
+          </h1>
+          <div className="rounded-lg border border-dashed border-line bg-surface px-6 py-14 text-center text-muted">
+            {stub[1]}
+          </div>
         </>
       )}
     </DashboardLayout>

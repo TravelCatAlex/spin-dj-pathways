@@ -86,10 +86,34 @@ export const NEXT_SESSION = {
   timeLabel: '4:30 PM',
   durationMinutes: 60,
   details: [
-    { id: 'teacher', label: 'Teacher', value: 'Coach Jordan', icon: 'teacher' },
-    { id: 'program', label: 'Program', value: 'Podcasting', icon: 'mic' },
-    { id: 'location', label: 'Location', value: 'In-Studio', icon: 'location' },
-    { id: 'project', label: 'Project', value: 'My First Vlog', icon: 'film' },
+    {
+      id: 'teacher',
+      label: 'Teacher',
+      icon: 'teacher',
+      value: 'Coach Jordan',
+      avatarUrl: '/images/avatar-avery.webp',
+    },
+    {
+      id: 'program',
+      label: 'Program',
+      icon: 'mic',
+      value: 'Podcasting',
+      valueIcon: 'mic',
+    },
+    {
+      id: 'location',
+      label: 'Location',
+      icon: 'location',
+      value: 'In-Studio',
+      valueIcon: 'location',
+    },
+    {
+      id: 'project',
+      label: 'Project',
+      icon: 'film',
+      value: 'My First Vlog',
+      valueIcon: 'film',
+    },
   ],
 };
 

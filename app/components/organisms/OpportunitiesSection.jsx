@@ -18,6 +18,7 @@ export default function OpportunitiesSection({ opportunities, onViewAll }) {
 
   return (
     <Card
+      className="flex flex-col"
       title="Upcoming Opportunities"
       icon="target"
       action={
@@ -26,7 +27,8 @@ export default function OpportunitiesSection({ opportunities, onViewAll }) {
         </Button>
       }
     >
-      <div className="opp-list">
+      {/* Stretches to fill the equal-height card. */}
+      <div className="flex flex-col gap-2.5">
         {opportunities.map((opp) => (
           <OpportunityRow
             key={opp.id}

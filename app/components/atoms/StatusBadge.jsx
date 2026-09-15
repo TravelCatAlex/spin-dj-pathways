@@ -11,8 +11,8 @@ export default function StatusBadge({ status }) {
 
   return (
     <span
-      className={`media-card__badge${
-        inProgress ? ' media-card__badge--progress' : ''
+      className={`absolute bottom-2 left-2 z-[1] rounded-[5px] px-2 py-[3px] text-[10px] font-bold text-white ${
+        inProgress ? 'bg-amber' : 'bg-green'
       }`}
     >
       {status}

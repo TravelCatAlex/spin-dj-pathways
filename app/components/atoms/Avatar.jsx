@@ -27,9 +27,11 @@ export default function Avatar({ name = '', src = null, size = 30, ring = false 
   };
 
   const className = [
-    'avatar',
-    src ? 'avatar--photo' : '',
-    ring ? 'avatar--ring' : '',
+    'relative grid place-items-center shrink-0 overflow-hidden rounded-full font-bold text-white',
+    src
+      ? 'bg-purple-50'
+      : 'bg-[linear-gradient(135deg,var(--color-purple),var(--color-purple-700))]',
+    ring ? 'shadow-[0_0_0_2px_var(--color-surface),0_0_0_4px_var(--color-purple)]' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -50,7 +52,7 @@ export default function Avatar({ name = '', src = null, size = 30, ring = false 
         width={size * 2}
         height={size * 2}
         sizes={`${size}px`}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        className="h-full w-full object-cover"
       />
     </div>
   );

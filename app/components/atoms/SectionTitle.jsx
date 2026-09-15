@@ -8,7 +8,7 @@ import Icon from './Icon';
  */
 export default function SectionTitle({ icon, children }) {
   return (
-    <h3 className="card__title">
+    <h3 className="m-0 flex items-center gap-[7px] text-[11.5px] font-extrabold uppercase tracking-[0.8px] text-ink">
       <Icon name={icon} />
       {children}
     </h3>

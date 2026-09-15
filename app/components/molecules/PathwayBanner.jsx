@@ -9,17 +9,16 @@ import { PATHWAY_BANNER } from '../../lib/fixtures';
  * The band's aspect ratio changes with the viewport (roughly 3.5:1 to 5.9:1),
  * so no fixed-ratio artwork can fill it with `cover` without slicing the mic.
  *
- * Instead the band is composited from two layers: a CSS gradient tuned to the
+ * Instead the band is composited from two layers: a gradient tuned to the
  * artwork's own left-edge colours fills the full width, and the artwork is
- * fitted to the band's HEIGHT and pinned right on top of it, its left edge
- * masked so it dissolves into the gradient. The result reads as full-bleed at
- * every width while the mic is never cropped — and it stays correct whatever
- * ratio the source image happens to be.
+ * fitted over it and pinned right, with a scrim keeping the heading readable.
  */
 export default function PathwayBanner() {
   return (
-    <div className="pathway-card__bg" aria-hidden="true">
-      <span className="pathway-card__wash" />
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Base wash, sampled from the artwork's own left edge (#200671 ->
+          #3f0e9a) so the two layers meet without a seam. */}
+      <span className="absolute inset-0 bg-[radial-gradient(120%_150%_at_88%_45%,rgba(168,26,190,0.5)_0%,rgba(103,16,172,0.22)_38%,rgba(32,6,113,0)_68%),linear-gradient(95deg,#1d0569_0%,#290775_42%,#360a94_74%,#46109f_100%)]" />
 
       <Image
         src={PATHWAY_BANNER.src}
@@ -28,11 +27,11 @@ export default function PathwayBanner() {
         priority
         quality={90}
         sizes="(max-width: 760px) 200vw, (max-width: 1180px) 100vw, 1100px"
-        className="pathway-card__art"
-        style={{ objectFit: 'cover', objectPosition: 'right center' }}
+        className="object-cover object-right"
       />
 
-      <span className="pathway-card__scrim" />
+      {/* Scrim keeps the heading readable over the artwork's brighter side. */}
+      <span className="absolute inset-0 bg-[linear-gradient(100deg,rgba(26,5,92,0.88)_0%,rgba(30,6,100,0.66)_30%,rgba(40,9,120,0.26)_52%,rgba(40,9,120,0)_72%)]" />
     </div>
   );
 }
