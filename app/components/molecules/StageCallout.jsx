@@ -5,38 +5,51 @@ import Icon from '../atoms/Icon';
 /**
  * MOLECULE — StageCallout
  * A white panel on the project band: current stage on the left, the next
- * action beside it, and a go button at the end.
+ * action beside it, and a go arrow at the end.
+ *
+ * The whole panel is the control, not just the arrow — the arrow is a plain
+ * span that picks up the panel's hover through `group`, so the affordance is
+ * the full-width target while the resting design is unchanged. (A nested
+ * <button> inside a <button> would be invalid HTML.)
  */
 export default function StageCallout({ stage, nextAction, onGo }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-md bg-white px-3 py-2.5 text-ink shadow-[0_6px_18px_rgba(0,0,0,0.18)] max-[760px]:flex-wrap">
-      <div className="min-w-0">
-        <p className="m-0 mb-px text-[10px] tracking-[0.4px] text-muted">Stage</p>
-        <p className="m-0 text-[14px] font-bold">{stage}</p>
-        <p className="m-0 mt-0.5 flex items-center gap-[5px] text-[10.5px] text-[#e11d48]">
+    <button
+      type="button"
+      onClick={onGo}
+      aria-label={`${stage} — next step: ${nextAction}`}
+      className="group flex w-full cursor-pointer items-center gap-3.5 rounded-md border-0 bg-white px-3 py-2.5 text-left text-ink shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-shadow duration-150 ease-out hover:shadow-[0_8px_22px_rgba(0,0,0,0.26)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple motion-reduce:transition-none max-[760px]:flex-wrap"
+    >
+      <span className="min-w-0 block">
+        <span className="m-0 mb-px block text-[10px] tracking-[0.4px] text-muted">
+          Stage
+        </span>
+        <span className="m-0 block text-[14px] font-bold">{stage}</span>
+        <span className="m-0 mt-0.5 flex items-center gap-[5px] text-[10.5px] text-[#e11d48]">
           <span className="h-1.5 w-1.5 rounded-full bg-[#e11d48]" aria-hidden="true" />
           You&apos;re here
-        </p>
-      </div>
+        </span>
+      </span>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2.5 border-l border-l-line pl-3.5 max-[760px]:basis-full max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-line max-[760px]:pl-0 max-[760px]:pt-2.5">
+      <span className="flex min-w-0 flex-1 items-center gap-2.5 border-l border-l-line pl-3.5 max-[760px]:basis-full max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-line max-[760px]:pl-0 max-[760px]:pt-2.5">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-purple-50 text-purple">
           <Icon name="video" size={16} />
         </span>
-        <span>
-          <p className="m-0 mb-px text-[10px] tracking-[0.4px] text-muted">Next Step</p>
-          <p className="m-0 text-[13px] font-bold">{nextAction}</p>
+        <span className="min-w-0">
+          <span className="m-0 mb-px block text-[10px] tracking-[0.4px] text-muted">
+            Next Step
+          </span>
+          <span className="m-0 block text-[13px] font-bold">{nextAction}</span>
         </span>
-      </div>
+      </span>
 
-      <button
-        type="button"
-        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border-0 bg-purple-50 text-purple transition-[background-color,transform] duration-150 ease-out hover:translate-x-0.5 hover:bg-purple hover:text-white motion-reduce:transition-none"
-        aria-label={`Start: ${nextAction}`}
-        onClick={onGo}
+      {/* Reacts to hover anywhere on the panel. */}
+      <span
+        aria-hidden="true"
+        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-purple-50 text-purple transition-[background-color,color,transform] duration-150 ease-out group-hover:translate-x-0.5 group-hover:bg-purple group-hover:text-white group-focus-visible:bg-purple group-focus-visible:text-white motion-reduce:transition-none"
       >
         <Icon name="chevronRight" size={16} />
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }

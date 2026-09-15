@@ -26,7 +26,7 @@ export default function PathwayCard({ pathway, project, onStartNextStep }) {
           <h2 className="m-0 mb-2.5 text-[25px] font-extrabold tracking-[-0.4px]">
             {pathway.title}
           </h2>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c29fff] px-3.5 py-1.5 text-[11.5px] font-semibold text-[#2b1065] shadow-[0_2px_10px_rgba(194,159,255,0.35)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e0d5fa] px-3.5 py-1.5 text-[11.5px] font-semibold text-black shadow-[0_2px_10px_rgba(224,213,250,0.3)]">
             <Icon name={pathway.trackIcon} size={13} />
             {pathway.track}
           </span>
