@@ -27,9 +27,9 @@ export default function PathwayBanner() {
         fill
         priority
         quality={90}
-        sizes="(max-width: 760px) 150vw, 760px"
+        sizes="(max-width: 760px) 200vw, (max-width: 1180px) 100vw, 1100px"
         className="pathway-card__art"
-        style={{ objectFit: 'contain', objectPosition: 'right center' }}
+        style={{ objectFit: 'cover', objectPosition: 'right center' }}
       />
 
       <span className="pathway-card__scrim" />

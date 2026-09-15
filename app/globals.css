@@ -345,13 +345,13 @@ button {
 }
 
 .btn--outline {
-  background: transparent;
+  background: var(--purple-50);
   color: var(--purple);
   border-color: var(--purple-100);
 }
 
 .btn--outline:hover {
-  background: var(--purple-50);
+  background: var(--purple-100);
   border-color: var(--purple);
 }
 
@@ -550,6 +550,17 @@ button {
 .grid-three > .card > .btn:last-child,
 .grid-hero > .card > .btn:last-child {
   margin-top: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Breathing room between a card's body and its pinned footer button. */
+.grid-three > .card > .btn:last-child {
+  margin-top: auto;
+}
+
+.grid-three > .card > *:nth-last-child(2) {
+  margin-bottom: 16px;
 }
 
 /* My Creations (wider) beside Upcoming Opportunities. */
@@ -620,23 +631,6 @@ button {
       rgba(32, 6, 113, 0) 68%
     ),
     linear-gradient(95deg, #1d0569 0%, #290775 42%, #360a94 74%, #46109f 100%);
-}
-
-/* Artwork dissolves into the wash on its left instead of ending on a hard
-   vertical edge. */
-.pathway-card__art {
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 12%,
-    #000 30%
-  );
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 12%,
-    #000 30%
-  );
 }
 
 /* Scrim keeps the heading readable over the artwork's brighter right side. */
@@ -1021,14 +1015,22 @@ button {
 .feedback__author {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 9px;
+  margin-bottom: 12px;
 }
 
-.feedback__meta {
+.feedback__name {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Date sits hard right, opposite the author. */
+.feedback__date {
+  margin: 0 0 0 auto;
+  font-size: 11px;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .feedback__quote {

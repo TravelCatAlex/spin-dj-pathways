@@ -59,8 +59,8 @@ export const LOGO = {
 /** Hero artwork for the Creator Pathway card. */
 export const PATHWAY_BANNER = {
   src: '/images/pathway-banner.webp',
-  width: 1800,
-  height: 645,
+  width: 2400,
+  height: 400,
 };
 
 export const CURRENT_PATHWAY = {
@@ -129,7 +129,7 @@ export const PROGRESS_ITEMS = [
 export const LATEST_FEEDBACK = {
   id: 'fb-1',
   coach: 'Coach Jordan',
-  coachAvatarUrl: null,
+  coachAvatarUrl: '/images/avatar-coach-jordan.webp',
   date: 'May 24, 2026',
   message:
     "Avery is doing an awesome job! You're getting more comfortable behind the mic and your ideas are getting stronger every week.",

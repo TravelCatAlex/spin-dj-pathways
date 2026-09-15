@@ -2,34 +2,48 @@
 
 import Image from 'next/image';
 
+/** "Coach Jordan" -> "CJ"; a single word yields one letter. */
+function initialsOf(name) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+}
+
 /**
  * ATOM — Avatar
- * Renders a photo when `src` is given, otherwise falls back to the initial on
- * a purple disc. The ring is drawn with box-shadow so it never changes the
- * element's footprint, keeping rows aligned whichever branch renders.
+ * Renders a photo when `src` is given, otherwise initials on a purple disc.
+ * The ring is drawn with box-shadow so it never changes the element's
+ * footprint, keeping rows aligned whichever branch renders.
  */
 export default function Avatar({ name = '', src = null, size = 30, ring = false }) {
   const style = {
     width: size,
     height: size,
     flexBasis: size,
-    fontSize: Math.round(size * 0.4),
+    fontSize: Math.round(size * 0.36),
   };
+
+  const className = [
+    'avatar',
+    src ? 'avatar--photo' : '',
+    ring ? 'avatar--ring' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   if (!src) {
     return (
-      <div
-        className={`avatar${ring ? ' avatar--ring' : ''}`}
-        style={style}
-        aria-hidden="true"
-      >
-        {name.charAt(0).toUpperCase()}
+      <div className={className} style={style} aria-hidden="true">
+        {initialsOf(name)}
       </div>
     );
   }
 
   return (
-    <div className={`avatar avatar--photo${ring ? ' avatar--ring' : ''}`} style={style}>
+    <div className={className} style={style}>
       <Image
         src={src}
         alt={name ? `${name}'s profile photo` : ''}

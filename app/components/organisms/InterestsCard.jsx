@@ -22,7 +22,7 @@ export default function InterestsCard({ interests, onEdit, onSelect }) {
           />
         ))}
       </div>
-      <Button block onClick={onEdit}>
+      <Button variant="outline" block onClick={onEdit}>
         Edit My Interests <Icon name="edit" />
       </Button>
     </Card>
