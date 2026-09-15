@@ -6,8 +6,11 @@ const BASE =
   'duration-150 ease-out active:translate-y-px';
 
 const VARIANTS = {
+  // purple -> purple-600 was a ~6% luminance shift and read as no change at
+  // all on a full-width button, so the hover also lifts and deepens its cast.
   primary:
-    'bg-purple text-white shadow-[0_6px_16px_rgba(124,58,237,0.26)] hover:bg-purple-600',
+    'bg-purple text-white shadow-[0_6px_16px_rgba(124,58,237,0.26)] ' +
+    'hover:-translate-y-px hover:bg-purple-700 hover:shadow-[0_10px_24px_rgba(124,58,237,0.45)]',
   outline:
     'bg-purple-50 text-purple border-purple-100 hover:bg-purple-100 hover:border-purple',
   soft:
