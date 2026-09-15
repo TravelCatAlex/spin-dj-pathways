@@ -17,6 +17,7 @@ export default function ProgressCard({ items, onSeeAll }) {
             icon={item.icon}
             title={item.title}
             description={item.description}
+            accent={item.accent}
           />
         ))}
       </div>

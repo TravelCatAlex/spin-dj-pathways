@@ -6,12 +6,15 @@ import SessionDetail from '../molecules/SessionDetail';
 
 /**
  * ORGANISM — NextSessionCard
+ * Date with the start time as a pill, then label/value detail rows.
  */
 export default function NextSessionCard({ session, onViewSchedule }) {
   return (
     <Card title="Next Session" icon="📅">
-      <p className="session__date">{session.dateLabel}</p>
-      <p className="session__time">{session.timeLabel}</p>
+      <div className="session__head">
+        <p className="session__date">{session.dateLabel}</p>
+        <span className="session__time">{session.timeLabel}</span>
+      </div>
 
       <div className="session__list">
         {session.details.map((detail) => (

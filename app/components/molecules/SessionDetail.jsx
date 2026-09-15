@@ -4,11 +4,11 @@ import Icon from '../atoms/Icon';
 
 /**
  * MOLECULE — SessionDetail
- * Label-over-value pair in the Next Session card.
+ * Label on the left, value right-aligned — the Next Session row layout.
  */
 export default function SessionDetail({ label, value, icon }) {
   return (
-    <div>
+    <div className="session__row">
       <p className="session__label">{label}</p>
       <p className="session__value">
         <Icon glyph={icon} />

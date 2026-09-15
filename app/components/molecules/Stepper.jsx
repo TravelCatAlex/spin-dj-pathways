@@ -5,7 +5,8 @@ import StepConnector from '../atoms/StepConnector';
 
 /**
  * MOLECULE — Stepper
- * Dots + connectors for the project stage sequence.
+ * Labelled dots + connectors for the project stage sequence.
+ * Labels hide below 980px so the row still fits.
  */
 export default function Stepper({ steps, currentIndex }) {
   return (
@@ -20,7 +21,10 @@ export default function Stepper({ steps, currentIndex }) {
 
         return (
           <div key={step} style={{ display: 'contents' }}>
-            <StepDot state={state} label={step} />
+            <div className={`stepper__step stepper__step--${state}`}>
+              <StepDot state={state} label={step} />
+              <span className="stepper__label">{step}</span>
+            </div>
             {idx < steps.length - 1 && <StepConnector />}
           </div>
         );

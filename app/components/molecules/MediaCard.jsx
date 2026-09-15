@@ -5,7 +5,7 @@ import StatusBadge from '../atoms/StatusBadge';
 
 /**
  * MOLECULE — MediaCard
- * Thumbnail + title + meta tile used by My Creations.
+ * Thumbnail with a play affordance, status badge, title, date and type chip.
  */
 export default function MediaCard({
   icon,
@@ -13,32 +13,38 @@ export default function MediaCard({
   status,
   meta,
   metaIcon,
+  kind,
   thumbnailUrl,
+  gradient,
   onClick,
 }) {
+  const thumbStyle = thumbnailUrl
+    ? {
+        backgroundImage: `url(${thumbnailUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : gradient
+      ? { background: gradient }
+      : undefined;
+
   return (
     <button type="button" className="media-card" onClick={onClick}>
-      <div
-        className="media-card__thumb"
-        style={
-          thumbnailUrl
-            ? {
-                backgroundImage: `url(${thumbnailUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }
-            : undefined
-        }
-      >
-        {!thumbnailUrl && <Icon glyph={icon} />}
+      <div className="media-card__thumb" style={thumbStyle}>
+        <span className="media-card__play" aria-hidden="true">
+          ▶
+        </span>
         <StatusBadge status={status} />
       </div>
       <div className="media-card__body">
         <p className="media-card__title">{title}</p>
-        <p className="media-card__meta">
-          <Icon glyph={metaIcon} />
-          {meta}
-        </p>
+        <div className="media-card__foot">
+          <p className="media-card__meta">
+            <Icon glyph={metaIcon} />
+            {meta}
+          </p>
+          {kind && <span className="media-card__kind">{kind}</span>}
+        </div>
       </div>
     </button>
   );

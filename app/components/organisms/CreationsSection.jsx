@@ -28,6 +28,8 @@ export default function CreationsSection({ creations, onViewAll, onOpen }) {
             status={creation.status}
             meta={creation.meta}
             metaIcon={creation.metaIcon}
+            kind={creation.kind}
+            gradient={creation.gradient}
             thumbnailUrl={creation.thumbnailUrl}
             onClick={() => onOpen?.(creation)}
           />

@@ -5,7 +5,7 @@ import Icon from '../atoms/Icon';
 
 /**
  * ORGANISM — TopBar
- * Greeting, date, and the profile CTA.
+ * Greeting, a date pill, and the profile CTA.
  */
 export default function TopBar({ user, dateLabel, onViewProfile }) {
   return (
@@ -20,7 +20,7 @@ export default function TopBar({ user, dateLabel, onViewProfile }) {
         <p className="topbar__date">
           <Icon glyph="📅" /> {dateLabel}
         </p>
-        <Button onClick={onViewProfile}>
+        <Button variant="soft" onClick={onViewProfile}>
           <Icon glyph="👤" /> View My Profile
         </Button>
       </div>

@@ -5,16 +5,17 @@ import { useEffect, useState } from 'react';
 import NavItem from '../molecules/NavItem';
 import Avatar from '../atoms/Avatar';
 import MenuToggle from '../atoms/MenuToggle';
+import Icon from '../atoms/Icon';
 import { NAV_ITEMS } from '../../lib/fixtures';
 
 const DRAWER_ID = 'sidebar-drawer';
 
 /**
  * ORGANISM — Sidebar
- * Brand, primary navigation, profile block and logout.
+ * Light rail with brand, primary navigation, profile block and logout.
  *
- * Desktop: a fixed left rail — the drawer is `display: contents`, so nav and
- * footer stay direct flex children of the rail.
+ * Desktop: the drawer is `display: contents`, so nav and footer stay direct
+ * flex children of the rail and the footer can sit at the bottom.
  * Mobile: collapses to a header row with a hamburger that opens the drawer.
  */
 export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
@@ -46,7 +47,6 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
             <br />
             PATHWAYS
           </p>
-          <p className="sidebar__user-hint">{user.firstName}</p>
         </div>
 
         <MenuToggle
@@ -74,14 +74,17 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
         <div className="sidebar__footer">
           <div className="sidebar__profile">
-            <Avatar name={user.firstName} src={user.avatarUrl} />
+            <Avatar name={user.firstName} src={user.avatarUrl} size={32} />
             <div>
               <p className="sidebar__profile-name">{user.firstName}</p>
               <p className="sidebar__profile-role">{user.role}</p>
             </div>
+            <span className="sidebar__profile-chevron" aria-hidden="true">
+              ⌄
+            </span>
           </div>
           <button type="button" className="sidebar__logout" onClick={onLogout}>
-            Log out
+            <Icon glyph="↩" /> Log out
           </button>
         </div>
       </div>
