@@ -1,8 +1,11 @@
 'use client';
 
+import { m } from 'motion/react';
+
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
 import SessionDetail from '../molecules/SessionDetail';
+import { group } from '../../lib/motion';
 
 /**
  * ORGANISM — NextSessionCard
@@ -19,8 +22,13 @@ export default function NextSessionCard({ session, onViewSchedule }) {
         </span>
       </div>
 
-      <div className="mx-0 mb-4 mt-0.5 flex flex-1 flex-col justify-evenly">
-        {session.details.map((detail) => (
+      {/* Teacher, then Program, Location, Project — the order you would read
+          them, so the sequence reinforces the hierarchy instead of fighting it. */}
+      <m.div
+        className="mx-0 mb-4 mt-0.5 flex flex-1 flex-col justify-evenly"
+        variants={group(0.09)}
+      >
+        {session.details.map((detail, idx) => (
           <SessionDetail
             key={detail.id}
             label={detail.label}
@@ -28,9 +36,10 @@ export default function NextSessionCard({ session, onViewSchedule }) {
             icon={detail.icon}
             valueIcon={detail.valueIcon}
             avatarUrl={detail.avatarUrl}
+            isLast={idx === session.details.length - 1}
           />
         ))}
-      </div>
+      </m.div>
 
       <Button className="mt-auto" block onClick={onViewSchedule}>
         View Full Schedule

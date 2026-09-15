@@ -31,7 +31,11 @@ export const CONTEXT_CHIPS = [
     label: 'Program',
     value: 'Podcasting',
     icon: 'mic',
-    accent: '#7c3aed',
+    // Not the brand purple: #7c3aed is the sidebar pill and every primary
+    // button, so an accent wearing it reads as chrome rather than as this
+    // chip's own colour. Orange also separates it from the blue and teal
+    // beside it.
+    accent: '#f97316',
   },
   {
     id: 'org',
@@ -124,12 +128,21 @@ export const NEXT_SESSION = {
   ],
 };
 
+/**
+ * Six interests, six hues spread evenly around the wheel — green, amber,
+ * pink, blue, cyan, red. The previous set had Marvel (#e11d48), Music
+ * (#ec4899) and YouTube (#ef4444) all in the red-pink family, so half the
+ * card read as one colour repeated.
+ *
+ * YouTube keeps red because that is the thing's own colour; Marvel gives way
+ * to green rather than have two reds sitting in the same grid.
+ */
 export const INTERESTS = [
-  { id: 'marvel', name: 'Marvel', icon: 'superhero', accent: '#e11d48' },
+  { id: 'marvel', name: 'Marvel', icon: 'superhero', accent: '#10b981' },
   { id: 'wwe', name: 'WWE', icon: 'trophy', accent: '#f59e0b' },
-  { id: 'music', name: 'Music', icon: 'music', accent: '#7c3aed' },
+  { id: 'music', name: 'Music', icon: 'music', accent: '#ec4899' },
   { id: 'gaming', name: 'Gaming', icon: 'gaming', accent: '#3b82f6' },
-  { id: 'podcasts', name: 'Podcasts', icon: 'mic', accent: '#14b8a6' },
+  { id: 'podcasts', name: 'Podcasts', icon: 'mic', accent: '#06b6d4' },
   { id: 'youtube', name: 'YouTube', icon: 'youtube', accent: '#ef4444' },
 ];
 
@@ -137,7 +150,10 @@ export const PROGRESS_ITEMS = [
   {
     id: 'pr-1',
     icon: 'trending',
-    accent: '#7c3aed',
+    // Blue. Teal sat right above pr-2's green and the two read as one colour
+    // repeated. The disc background is derived from this value, so it follows
+    // automatically.
+    accent: '#3b82f6',
     title: 'Working more independently',
     description: "You're prompting less during recording.",
   },
@@ -205,7 +221,11 @@ export const OPPORTUNITIES = [
     title: 'Spin DJ Live - Summer Show',
     icon: 'headphones',
     when: 'Jun 14, 2026 - 2:00 PM',
-    accent: '#7c3aed',
+    // Blue, the same one the pathway journey uses for Supabase. With green,
+    // amber and pink on the rows below it, blue is the one hue that sits well
+    // clear of all three — and unlike purple it is not carrying any interface
+    // meaning elsewhere, so it reads as this row's colour rather than chrome.
+    accent: '#3b82f6',
     cta: "I'm Interested",
   },
   {
@@ -229,7 +249,10 @@ export const OPPORTUNITIES = [
     title: 'Event Check-In Team',
     icon: 'star',
     when: 'Jun 14, 2026 - 2:00 PM',
-    accent: '#7c3aed',
+    // Pink, not the purple op-1 already uses — four rows should read as four
+    // things. Taken from the pathway journey's palette so the page keeps one
+    // set of accents rather than inventing a new one here.
+    accent: '#ec4899',
     cta: 'View',
   },
 ];

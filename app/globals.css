@@ -1,7 +1,7 @@
 /* ==========================================================================
    Spin DJ Pathways — Tailwind entry
    Design tokens live in @theme, so every colour/radius/shadow below is
-   available as a utility (bg-purple, rounded-xl2, shadow-purple, ...).
+   available as a utility (bg-purple, rounded-lg, shadow-md, ...).
    All component styling is expressed as Tailwind utilities in the JSX.
    ========================================================================== */
 
@@ -31,7 +31,6 @@
 
   --shadow-sm: 0 1px 2px rgba(20, 18, 31, 0.04);
   --shadow-md: 0 4px 16px rgba(20, 18, 31, 0.07);
-  --shadow-purple: 0 16px 36px rgba(124, 58, 237, 0.26);
 
   --spacing-sidebar: 216px;
 

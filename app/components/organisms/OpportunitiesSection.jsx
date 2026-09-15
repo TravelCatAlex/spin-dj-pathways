@@ -1,5 +1,8 @@
 'use client';
 
+import { m } from 'motion/react';
+import { group } from '../../lib/motion';
+
 import { useState } from 'react';
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
@@ -28,7 +31,7 @@ export default function OpportunitiesSection({ opportunities, onViewAll }) {
       }
     >
       {/* Stretches to fill the equal-height card. */}
-      <div className="flex flex-col gap-2.5">
+      <m.div className="flex flex-col gap-2.5" variants={group(0.05)}>
         {opportunities.map((opp) => (
           <OpportunityRow
             key={opp.id}
@@ -41,7 +44,7 @@ export default function OpportunitiesSection({ opportunities, onViewAll }) {
             onToggle={() => toggle(opp.id)}
           />
         ))}
-      </div>
+      </m.div>
     </Card>
   );
 }

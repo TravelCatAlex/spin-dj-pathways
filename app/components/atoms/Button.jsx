@@ -11,12 +11,22 @@ const VARIANTS = {
   primary:
     'bg-purple text-white shadow-[0_6px_16px_rgba(124,58,237,0.26)] ' +
     'hover:-translate-y-px hover:bg-purple-700 hover:shadow-[0_10px_24px_rgba(124,58,237,0.45)]',
+  // Outline sits on three card footers — Edit My Interests, See All Progress,
+  // View All Feedback — and was a flat colour swap while everything around it
+  // had learned to lift. Same 1px rise as primary, at a weight that suits a
+  // secondary action: a tinted cast rather than primary's saturated one.
   outline:
-    'bg-purple-50 text-purple border-purple-100 hover:bg-purple-100 hover:border-purple',
+    'bg-purple-50 text-purple border-purple-100 ' +
+    'hover:-translate-y-px hover:bg-purple-100 hover:border-purple ' +
+    'hover:shadow-[0_6px_14px_rgba(124,58,237,0.18)]',
   soft:
-    'bg-surface text-purple border-line rounded-full shadow-sm hover:border-purple',
+    'bg-surface text-purple border-line rounded-full shadow-sm ' +
+    'hover:-translate-y-px hover:border-purple hover:shadow-[0_6px_14px_rgba(124,58,237,0.16)]',
+  // No lift on ghost: it is inline text beside other text, and raising it
+  // would knock the line it sits on out of alignment. It deepens instead.
   ghost:
-    'bg-transparent text-purple !px-0.5 !py-1 !text-[12.5px] hover:underline',
+    'bg-transparent text-purple !px-0.5 !py-1 !text-[12.5px] ' +
+    'hover:text-purple-700 hover:underline',
 };
 
 /**

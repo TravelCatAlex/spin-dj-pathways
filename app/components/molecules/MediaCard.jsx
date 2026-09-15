@@ -1,5 +1,8 @@
 'use client';
 
+import { m } from 'motion/react';
+import { rise, liftCard, spring } from '../../lib/motion';
+
 import Image from 'next/image';
 import Icon from '../atoms/Icon';
 import StatusBadge from '../atoms/StatusBadge';
@@ -11,6 +14,15 @@ import StatusBadge from '../atoms/StatusBadge';
  * The thumbnail goes through next/image so the browser gets a variant sized
  * for the card rather than the full-resolution source. A scrim sits over it
  * to keep the play button and badge legible on bright artwork.
+ *
+ * Hover behaves the way a video card is expected to: the artwork pushes in,
+ * the play button grows, and the scrim deepens to hold the title and badge
+ * legible while the image moves beneath them.
+ *
+ * The zoom is on the image, never the frame. next/image renders with `fill`,
+ * so scaling the container would drag the play button and the status badge
+ * along with it; scaling the image alone lets it move behind them, clipped by
+ * the frame's existing overflow-hidden.
  */
 export default function MediaCard({
   icon,
@@ -22,10 +34,26 @@ export default function MediaCard({
   thumbnailUrl,
   onClick,
 }) {
+  const art = { hover: { scale: 1.07, transition: spring } };
+
+  const scrim = {
+    hover: {
+      background:
+        'linear-gradient(180deg,rgba(20,18,31,0.12) 0%,rgba(20,18,31,0.46) 100%)',
+      transition: { duration: 0.25 },
+    },
+  };
+
+  const play = {
+    hover: { scale: 1.18, backgroundColor: 'rgb(255,255,255)', transition: spring },
+  };
+
   return (
-    <button
+    <m.button
       type="button"
-      className="flex w-full flex-col overflow-hidden rounded-md border border-line bg-surface p-0 text-left transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+      variants={rise}
+      {...liftCard}
+      className="flex w-full flex-col overflow-hidden rounded-md border border-line bg-surface p-0 text-left transition-shadow duration-200 ease-out hover:shadow-md"
       onClick={onClick}
     >
       {/* Fixed ratio: every thumbnail is the same shape at every width, so a
@@ -33,23 +61,31 @@ export default function MediaCard({
       <div className="relative grid aspect-[16/11] place-items-center overflow-hidden bg-[linear-gradient(135deg,#d9c6ff,#f3ecff)] text-purple">
         {thumbnailUrl ? (
           <>
-            <Image
-              src={thumbnailUrl}
-              alt=""
-              fill
-              sizes="(max-width: 760px) 100vw, (max-width: 980px) 33vw, 220px"
-              className="object-cover"
-            />
+            <m.div className="absolute inset-0" variants={art}>
+              <Image
+                src={thumbnailUrl}
+                alt=""
+                fill
+                sizes="(max-width: 760px) 100vw, (max-width: 980px) 33vw, 220px"
+                className="object-cover"
+              />
+            </m.div>
             {/* Darkens the artwork just enough for the play button and badge. */}
-            <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,18,31,0.05)_0%,rgba(20,18,31,0.28)_100%)]" />
+            <m.span
+              className="absolute inset-0 bg-[linear-gradient(180deg,rgba(20,18,31,0.05)_0%,rgba(20,18,31,0.28)_100%)]"
+              variants={scrim}
+            />
           </>
         ) : (
           <Icon name={icon} size={28} />
         )}
 
-        <span className="relative grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 text-[13px] text-purple shadow-[0_3px_10px_rgba(20,18,31,0.18)]">
+        <m.span
+          className="relative grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 text-[13px] text-purple shadow-[0_3px_10px_rgba(20,18,31,0.18)]"
+          variants={play}
+        >
           <Icon name="play" size={14} />
-        </span>
+        </m.span>
         <StatusBadge status={status} />
       </div>
 
@@ -71,6 +107,6 @@ export default function MediaCard({
           )}
         </div>
       </div>
-    </button>
+    </m.button>
   );
 }
