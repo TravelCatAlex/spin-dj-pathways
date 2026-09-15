@@ -17,9 +17,9 @@ export default function SpinDJDashboard() {
     return (
       <div className="grid min-h-screen place-items-center bg-[linear-gradient(135deg,#faf8ff_0%,#ebe0ff_100%)] p-8 text-center text-ink">
         <div>
-          <div className="mb-[26px] inline-block rounded-xl border border-line bg-white px-[34px] py-[22px] shadow-[0_18px_44px_rgba(124,58,237,0.14)]">
-            <Logo width={260} priority className="mx-auto" />
-          </div>
+          {/* The logo is transparent and the screen is light, so it needs no
+              backing panel — that only existed for the old dark background. */}
+          <Logo width={260} priority className="mx-auto mb-[26px]" />
           <p className="m-0 mb-9 text-ink-soft">Select your role to continue</p>
           <div className="flex flex-wrap justify-center gap-3">
             {ROLES.map((r) => (
