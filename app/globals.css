@@ -519,7 +519,18 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   margin-bottom: 18px;
-  align-items: start;
+  align-items: stretch;
+}
+
+/* Equal-height cards with their footer button pinned to the bottom, so the
+   three buttons sit on one line however much content each card holds. */
+.grid-three > .card {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-three > .card > .btn:last-child {
+  margin-top: auto;
 }
 
 /* My Creations (wider) beside Upcoming Opportunities. */
@@ -843,7 +854,7 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
-  margin-bottom: 13px;
+  margin-bottom: 14px;
 }
 
 .tag {
@@ -969,12 +980,25 @@ button {
   height: 108px;
   display: grid;
   place-items: center;
-  font-size: 32px;
+  overflow: hidden;
+  color: var(--purple);
   background: linear-gradient(135deg, #d9c6ff, #f3ecff);
+}
+
+/* Darkens the artwork just enough for the play button and badge to read. */
+.media-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 18, 31, 0.05) 0%,
+    rgba(20, 18, 31, 0.28) 100%
+  );
 }
 
 /* Play affordance over the thumbnail. */
 .media-card__play {
+  position: relative;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -988,6 +1012,7 @@ button {
 
 .media-card__badge {
   position: absolute;
+  z-index: 1;
   left: 8px;
   bottom: 8px;
   padding: 3px 8px;

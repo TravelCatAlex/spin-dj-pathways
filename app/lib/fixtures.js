@@ -59,8 +59,8 @@ export const LOGO = {
 /** Hero artwork for the Creator Pathway card. */
 export const PATHWAY_BANNER = {
   src: '/images/pathway-banner.webp',
-  width: 1742,
-  height: 840,
+  width: 1800,
+  height: 645,
 };
 
 export const CURRENT_PATHWAY = {
@@ -141,7 +141,7 @@ export const CREATIONS = [
     icon: 'film',
     status: 'Completed',
     kind: 'Video',
-    gradient: 'linear-gradient(135deg, #b79bff, #e9ddff)',
+    thumbnailUrl: '/images/creation-intro-video.webp',
     meta: 'May 10, 2026',
     metaIcon: 'calendar',
   },
@@ -151,7 +151,7 @@ export const CREATIONS = [
     icon: 'mic',
     status: 'Completed',
     kind: 'Audio',
-    gradient: 'linear-gradient(135deg, #8b5cf6, #c4b5fd)',
+    thumbnailUrl: '/images/creation-podcast-intro.webp',
     meta: 'May 3, 2026',
     metaIcon: 'calendar',
   },
@@ -161,7 +161,7 @@ export const CREATIONS = [
     icon: 'note',
     status: 'In Progress',
     kind: 'Podcast',
-    gradient: 'linear-gradient(135deg, #d9c6ff, #f3ecff)',
+    thumbnailUrl: '/images/creation-superheroes.webp',
     meta: 'Recording',
     metaIcon: 'mixer',
   },
