@@ -71,7 +71,7 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
         <div className="sidebar__footer">
           <div className="sidebar__profile">
-            <Avatar name={user.firstName} src={user.avatarUrl} size={32} />
+            <Avatar name={user.firstName} src={user.avatarUrl} size={34} ring />
             <div>
               <p className="sidebar__profile-name">{user.firstName}</p>
               <p className="sidebar__profile-role">{user.role}</p>

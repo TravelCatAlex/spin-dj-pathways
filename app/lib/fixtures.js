@@ -12,7 +12,7 @@ export const CURRENT_USER = {
   lastName: 'Stuart',
   email: 'brookestuart@gmail.com',
   role: 'Student',
-  avatarUrl: null,
+  avatarUrl: '/images/avatar-avery.webp',
 };
 
 export const DASHBOARD_DATE = 'Sunday, May 25, 2026';
@@ -129,6 +129,7 @@ export const PROGRESS_ITEMS = [
 export const LATEST_FEEDBACK = {
   id: 'fb-1',
   coach: 'Coach Jordan',
+  coachAvatarUrl: null,
   date: 'May 24, 2026',
   message:
     "Avery is doing an awesome job! You're getting more comfortable behind the mic and your ideas are getting stronger every week.",
