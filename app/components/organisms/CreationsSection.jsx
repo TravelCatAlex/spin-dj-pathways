@@ -1,5 +1,8 @@
 'use client';
 
+import { m } from 'motion/react';
+import { group } from '../../lib/motion';
+
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
 import MediaCard from '../molecules/MediaCard';
@@ -10,6 +13,7 @@ import MediaCard from '../molecules/MediaCard';
  * stretching it can't open a dead gap between each title and its date row.
  */
 export default function CreationsSection({ creations, onViewAll, onOpen }) {
+
   return (
     <Card
       className="flex flex-col"
@@ -23,7 +27,10 @@ export default function CreationsSection({ creations, onViewAll, onOpen }) {
     >
       {/* Three across when there's room, dropping to two then one on its own —
           below ~150px a thumbnail is too cramped to read. */}
-      <div className="grid grid-cols-3 content-start gap-4 max-[760px]:grid-cols-1">
+      <m.div
+        className="grid grid-cols-3 content-start gap-4 max-[760px]:grid-cols-1"
+        variants={group(0.05)}
+      >
         {creations.map((creation) => (
           <MediaCard
             key={creation.id}
@@ -38,7 +45,7 @@ export default function CreationsSection({ creations, onViewAll, onOpen }) {
             onClick={() => onOpen?.(creation)}
           />
         ))}
-      </div>
+      </m.div>
     </Card>
   );
 }

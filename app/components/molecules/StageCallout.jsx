@@ -1,6 +1,9 @@
 'use client';
 
+import { m } from 'motion/react';
+
 import Icon from '../atoms/Icon';
+import { liftPanel, nudgeArrow } from '../../lib/motion';
 
 /**
  * MOLECULE — StageCallout
@@ -14,13 +17,14 @@ import Icon from '../atoms/Icon';
  */
 export default function StageCallout({ stage, nextAction, onGo }) {
   return (
-    <button
+    <m.button
       type="button"
       onClick={onGo}
+      {...liftPanel}
       aria-label={`${stage} — next step: ${nextAction}`}
-      className="group flex w-full cursor-pointer items-center gap-3.5 rounded-md border-0 bg-white px-3 py-2.5 text-left text-ink shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-shadow duration-150 ease-out hover:shadow-[0_8px_22px_rgba(0,0,0,0.26)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple motion-reduce:transition-none max-[760px]:flex-wrap"
+      className="group flex w-full cursor-pointer items-center gap-3.5 rounded-md border-0 bg-white px-3 py-2.5 text-left text-ink shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-shadow duration-200 ease-out hover:shadow-[0_14px_30px_rgba(0,0,0,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple motion-reduce:transition-none max-[760px]:flex-wrap max-[760px]:gap-y-2.5"
     >
-      <span className="min-w-0 block">
+      <span className="min-w-0 block max-[760px]:basis-full max-[760px]:border-b max-[760px]:border-b-line max-[760px]:pb-2.5">
         <span className="m-0 mb-px block text-[10px] tracking-[0.4px] text-muted">
           Stage
         </span>
@@ -31,7 +35,7 @@ export default function StageCallout({ stage, nextAction, onGo }) {
         </span>
       </span>
 
-      <span className="flex min-w-0 flex-1 items-center gap-2.5 border-l border-l-line pl-3.5 max-[760px]:basis-full max-[760px]:border-l-0 max-[760px]:border-t max-[760px]:border-t-line max-[760px]:pl-0 max-[760px]:pt-2.5">
+      <span className="flex min-w-0 flex-1 items-center gap-2.5 border-l border-l-line pl-3.5 max-[760px]:border-l-0 max-[760px]:pl-0">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-purple-50 text-purple">
           <Icon name="video" size={16} />
         </span>
@@ -44,12 +48,13 @@ export default function StageCallout({ stage, nextAction, onGo }) {
       </span>
 
       {/* Reacts to hover anywhere on the panel. */}
-      <span
+      <m.span
         aria-hidden="true"
-        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-purple-50 text-purple transition-[background-color,color,transform] duration-150 ease-out group-hover:translate-x-0.5 group-hover:bg-purple group-hover:text-white group-focus-visible:bg-purple group-focus-visible:text-white motion-reduce:transition-none"
+        variants={nudgeArrow}
+        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-purple-50 text-purple transition-[background-color,color] duration-200 ease-out group-hover:bg-purple group-hover:text-white group-focus-visible:bg-purple group-focus-visible:text-white motion-reduce:transition-none"
       >
         <Icon name="chevronRight" size={16} />
-      </span>
-    </button>
+      </m.span>
+    </m.button>
   );
 }
