@@ -129,7 +129,7 @@ export const PROGRESS_ITEMS = [
 export const LATEST_FEEDBACK = {
   id: 'fb-1',
   coach: 'Coach Jordan',
-  coachAvatarUrl: '/images/avatar-coach-jordan.webp',
+  coachAvatarUrl: '/images/avatar-avery.webp',
   date: 'May 24, 2026',
   message:
     "Avery is doing an awesome job! You're getting more comfortable behind the mic and your ideas are getting stronger every week.",
