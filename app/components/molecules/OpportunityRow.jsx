@@ -28,10 +28,10 @@ export default function OpportunityRow({
     >
       <div className="flex min-w-0 items-center gap-[11px]">
         <span
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[14px]"
+          className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full text-[14px]"
           style={{ background: `${accent}1f`, color: accent }}
         >
-          <Icon name={icon} size={15} />
+          <Icon name={icon} size={16} />
         </span>
         <div>
           <p className="m-0 mb-0.5 text-[13px] font-bold">{title}</p>

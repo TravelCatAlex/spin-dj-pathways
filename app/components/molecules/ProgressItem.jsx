@@ -8,12 +8,14 @@ import Icon from '../atoms/Icon';
  */
 export default function ProgressItem({ icon, title, description, accent }) {
   return (
-    <div className="flex items-start gap-2.5">
+    <div className="flex items-center gap-2.5">
+      {/* 34px disc, matching the opportunity rows so every circular status
+          badge on the page is the same size. */}
       <span
-        className="mt-px grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full text-[10px]"
-        style={{ background: `${accent}1f`, color: accent }}
+        className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full"
+        style={{ background: `${accent}29`, color: accent }}
       >
-        <Icon name={icon} />
+        <Icon name={icon} size={16} />
       </span>
       <div>
         <p className="m-0 mb-0.5 text-[12.5px] font-bold">{title}</p>
