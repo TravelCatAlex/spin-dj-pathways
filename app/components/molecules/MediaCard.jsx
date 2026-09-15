@@ -4,7 +4,9 @@ import { m } from 'motion/react';
 import { rise, liftCard, spring } from '../../lib/motion';
 
 import Image from 'next/image';
+import Skeleton from '../atoms/Skeleton';
 import Icon from '../atoms/Icon';
+import { useImageLoaded } from '../../lib/useImageLoaded';
 import StatusBadge from '../atoms/StatusBadge';
 
 /**
@@ -34,6 +36,12 @@ export default function MediaCard({
   thumbnailUrl,
   onClick,
 }) {
+  const {
+    loaded: thumbLoaded,
+    holderRef: thumbRef,
+    imgProps: thumbProps,
+  } = useImageLoaded();
+
   const art = { hover: { scale: 1.07, transition: spring } };
 
   const scrim = {
@@ -58,16 +66,22 @@ export default function MediaCard({
     >
       {/* Fixed ratio: every thumbnail is the same shape at every width, so a
           card whose title wraps to two lines can't stretch its own video. */}
-      <div className="relative grid aspect-[16/11] place-items-center overflow-hidden bg-[linear-gradient(135deg,#d9c6ff,#f3ecff)] text-purple">
+      <div
+        ref={thumbRef}
+        className="relative grid aspect-[16/11] place-items-center overflow-hidden bg-[linear-gradient(135deg,#d9c6ff,#f3ecff)] text-purple">
         {thumbnailUrl ? (
           <>
             <m.div className="absolute inset-0" variants={art}>
+              {!thumbLoaded && <Skeleton tone="lavender" />}
               <Image
+                {...thumbProps}
                 src={thumbnailUrl}
                 alt=""
                 fill
                 sizes="(max-width: 760px) 100vw, (max-width: 980px) 33vw, 220px"
-                className="object-cover"
+                className={`object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+                  thumbLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
               />
             </m.div>
             {/* Darkens the artwork just enough for the play button and badge. */}
