@@ -39,6 +39,20 @@
 
   --animate-drawer-in: drawer-in 0.16s ease-out;
 
+  /* A band of light travelling across a placeholder while its image loads.
+     1.6s is deliberately unhurried: a fast shimmer reads as a progress bar
+     and makes a slow connection feel broken. */
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
   @keyframes drawer-in {
     from {
       opacity: 0;
