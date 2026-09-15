@@ -1,0 +1,76 @@
+/* ==========================================================================
+   Spin DJ Pathways — Tailwind entry
+   Design tokens live in @theme, so every colour/radius/shadow below is
+   available as a utility (bg-purple, rounded-xl2, shadow-purple, ...).
+   All component styling is expressed as Tailwind utilities in the JSX.
+   ========================================================================== */
+
+@import "tailwindcss";
+
+@theme {
+  --color-purple: #7c3aed;
+  --color-purple-600: #6d28d9;
+  --color-purple-700: #5b21b6;
+  --color-purple-50: #f7f3ff;
+  --color-purple-100: #ebe0ff;
+  --color-orange: #ff9f1c;
+  --color-green: #12b76a;
+  --color-amber: #f59e0b;
+
+  --color-ink: #14121f;
+  --color-ink-soft: #565465;
+  --color-muted: #8f8da1;
+  --color-line: #eceaf3;
+  --color-surface: #ffffff;
+  --color-canvas: #f7f7fb;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 18, 31, 0.04);
+  --shadow-md: 0 4px 16px rgba(20, 18, 31, 0.07);
+  --shadow-purple: 0 16px 36px rgba(124, 58, 237, 0.26);
+
+  --spacing-sidebar: 216px;
+
+  --font-sans: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+
+  --animate-drawer-in: drawer-in 0.16s ease-out;
+
+  @keyframes drawer-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+}
