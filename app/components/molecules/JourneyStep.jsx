@@ -22,7 +22,7 @@ export default function JourneyStep({ icon, title, description, accent, showArro
       <p className="journey__desc">{description}</p>
       {showArrow && (
         <div className="journey__arrow">
-          <Icon name="arrowRight" size={14} />
+          <Icon name="arrowRight" size={18} strokeWidth={2.5} />
         </div>
       )}
     </li>

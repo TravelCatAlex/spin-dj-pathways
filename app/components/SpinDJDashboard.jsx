@@ -17,7 +17,9 @@ export default function SpinDJDashboard() {
     return (
       <div className="role-screen">
         <div>
-          <Logo width={280} priority className="role-screen__logo" />
+          <div className="role-screen__brand">
+            <Logo width={260} priority className="role-screen__logo" />
+          </div>
           <p className="role-screen__sub">Select your role to continue</p>
           <div className="role-screen__options">
             {ROLES.map((r) => (

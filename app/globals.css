@@ -110,7 +110,16 @@ button {
 }
 
 .role-screen__logo {
-  margin: 0 auto 10px;
+  margin: 0 auto;
+}
+
+.role-screen__brand {
+  display: inline-block;
+  padding: 22px 34px;
+  margin-bottom: 26px;
+  border-radius: var(--r-xl);
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
 }
 
 .sidebar__nav {
@@ -1083,7 +1092,7 @@ button {
 .journey {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 10px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1120,12 +1129,15 @@ button {
 }
 
 /* Arrow sits between circles, vertically centred on them. */
+/* Centred in the gap between two circles, level with their midline. */
 .journey__arrow {
   position: absolute;
   top: 23px;
-  right: -11px;
-  transform: translateY(-50%);
-  color: var(--muted);
+  right: -5px;
+  transform: translate(50%, -50%);
+  display: grid;
+  place-items: center;
+  color: var(--purple);
   line-height: 1;
 }
 
