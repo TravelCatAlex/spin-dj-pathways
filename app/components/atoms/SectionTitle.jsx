@@ -9,7 +9,7 @@ import Icon from './Icon';
 export default function SectionTitle({ icon, children }) {
   return (
     <h3 className="card__title">
-      <Icon glyph={icon} />
+      <Icon name={icon} />
       {children}
     </h3>
   );

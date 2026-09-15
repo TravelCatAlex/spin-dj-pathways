@@ -6,6 +6,7 @@ import NavItem from '../molecules/NavItem';
 import Avatar from '../atoms/Avatar';
 import MenuToggle from '../atoms/MenuToggle';
 import Icon from '../atoms/Icon';
+import Logo from '../atoms/Logo';
 import { NAV_ITEMS } from '../../lib/fixtures';
 
 const DRAWER_ID = 'sidebar-drawer';
@@ -42,11 +43,7 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
     <aside className="sidebar">
       <div className="sidebar__top">
         <div className="sidebar__brand">
-          <p className="sidebar__logo">
-            SPIN<span aria-hidden="true">DJ</span>
-            <br />
-            PATHWAYS
-          </p>
+          <Logo width={150} priority />
         </div>
 
         <MenuToggle
@@ -79,12 +76,12 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
               <p className="sidebar__profile-name">{user.firstName}</p>
               <p className="sidebar__profile-role">{user.role}</p>
             </div>
-            <span className="sidebar__profile-chevron" aria-hidden="true">
-              ⌄
+            <span className="sidebar__profile-chevron">
+              <Icon name="chevronDown" size={14} />
             </span>
           </div>
           <button type="button" className="sidebar__logout" onClick={onLogout}>
-            <Icon glyph="↩" /> Log out
+            <Icon name="logout" /> Log out
           </button>
         </div>
       </div>

@@ -14,9 +14,9 @@ export default function ContextChip({ label, value, icon, action, onClick }) {
         className="context-chip context-chip--action"
         onClick={onClick}
       >
-        <Icon glyph={icon} />
+        <Icon name={icon} />
         {value}
-        <span aria-hidden="true">›</span>
+        <Icon name="chevronRight" size={14} />
       </button>
     );
   }
@@ -25,7 +25,7 @@ export default function ContextChip({ label, value, icon, action, onClick }) {
     <button type="button" className="context-chip" onClick={onClick}>
       <p className="context-chip__label">{label}</p>
       <p className="context-chip__value">
-        <Icon glyph={icon} />
+        <Icon name={icon} />
         {value}
       </p>
     </button>

@@ -31,8 +31,8 @@ export default function MediaCard({
   return (
     <button type="button" className="media-card" onClick={onClick}>
       <div className="media-card__thumb" style={thumbStyle}>
-        <span className="media-card__play" aria-hidden="true">
-          ▶
+        <span className="media-card__play">
+          <Icon name="play" size={14} />
         </span>
         <StatusBadge status={status} />
       </div>
@@ -40,7 +40,7 @@ export default function MediaCard({
         <p className="media-card__title">{title}</p>
         <div className="media-card__foot">
           <p className="media-card__meta">
-            <Icon glyph={metaIcon} />
+            <Icon name={metaIcon} />
             {meta}
           </p>
           {kind && <span className="media-card__kind">{kind}</span>}

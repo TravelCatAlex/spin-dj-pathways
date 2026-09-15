@@ -3,7 +3,7 @@
 import Icon from '../atoms/Icon';
 import Stepper from '../molecules/Stepper';
 import StageCallout from '../molecules/StageCallout';
-import PathwayBannerArt from '../molecules/PathwayBannerArt';
+import PathwayBanner from '../molecules/PathwayBanner';
 
 /**
  * ORGANISM — PathwayCard
@@ -12,12 +12,12 @@ import PathwayBannerArt from '../molecules/PathwayBannerArt';
 export default function PathwayCard({ pathway, project }) {
   return (
     <div className="pathway-card">
-      <PathwayBannerArt />
+      <PathwayBanner />
 
       <p className="pathway-card__eyebrow">Current Pathway</p>
       <h2 className="pathway-card__title">{pathway.title}</h2>
       <span className="pathway-card__badge">
-        <Icon glyph={pathway.trackIcon} />
+        <Icon name={pathway.trackIcon} />
         {pathway.track}
       </span>
       <p className="pathway-card__desc">{pathway.description}</p>
@@ -26,7 +26,7 @@ export default function PathwayCard({ pathway, project }) {
 
       <p className="pathway-card__eyebrow">Current Project</p>
       <h3 className="pathway-card__project-title">
-        <Icon glyph={project.icon} />
+        <Icon name={project.icon} />
         {project.title}
       </h3>
 

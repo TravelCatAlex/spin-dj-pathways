@@ -10,7 +10,7 @@ import SessionDetail from '../molecules/SessionDetail';
  */
 export default function NextSessionCard({ session, onViewSchedule }) {
   return (
-    <Card title="Next Session" icon="📅">
+    <Card title="Next Session" icon="calendar">
       <div className="session__head">
         <p className="session__date">{session.dateLabel}</p>
         <span className="session__time">{session.timeLabel}</span>

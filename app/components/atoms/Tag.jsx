@@ -10,7 +10,7 @@ export default function Tag({ icon, name, onClick }) {
   return (
     <button type="button" className="tag" onClick={onClick}>
       <p className="tag__icon">
-        <Icon glyph={icon} />
+        <Icon name={icon} />
       </p>
       <p className="tag__name">{name}</p>
     </button>

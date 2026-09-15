@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Logo from './atoms/Logo';
 import StudentDashboardPage from './pages/StudentDashboardPage';
 
 const ROLES = ['student', 'teacher', 'organization'];
@@ -16,10 +17,7 @@ export default function SpinDJDashboard() {
     return (
       <div className="role-screen">
         <div>
-          <div style={{ fontSize: '56px' }} aria-hidden="true">
-            🎧
-          </div>
-          <h1 className="role-screen__title">Spin DJ Pathways</h1>
+          <Logo width={280} priority className="role-screen__logo" />
           <p className="role-screen__sub">Select your role to continue</p>
           <div className="role-screen__options">
             {ROLES.map((r) => (

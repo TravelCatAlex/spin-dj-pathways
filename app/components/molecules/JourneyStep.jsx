@@ -10,13 +10,13 @@ export default function JourneyStep({ icon, title, description, showArrow }) {
   return (
     <li className="journey__step">
       <div className="journey__icon">
-        <Icon glyph={icon} />
+        <Icon name={icon} />
       </div>
       <p className="journey__title">{title}</p>
       <p className="journey__desc">{description}</p>
       {showArrow && (
-        <div className="journey__arrow" aria-hidden="true">
-          →
+        <div className="journey__arrow">
+          <Icon name="arrowRight" size={14} />
         </div>
       )}
     </li>

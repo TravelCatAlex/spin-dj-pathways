@@ -19,7 +19,7 @@ export default function OpportunitiesSection({ opportunities, onViewAll }) {
   return (
     <Card
       title="Upcoming Opportunities"
-      icon="🎯"
+      icon="target"
       className="section-gap"
       action={
         <Button variant="ghost" onClick={onViewAll}>

@@ -2,6 +2,7 @@
 
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
+import Icon from '../atoms/Icon';
 import ProgressItem from '../molecules/ProgressItem';
 
 /**
@@ -9,7 +10,7 @@ import ProgressItem from '../molecules/ProgressItem';
  */
 export default function ProgressCard({ items, onSeeAll }) {
   return (
-    <Card title="My Progress" icon="📈">
+    <Card title="My Progress" icon="trending">
       <div className="progress-list">
         {items.map((item) => (
           <ProgressItem
@@ -22,7 +23,7 @@ export default function ProgressCard({ items, onSeeAll }) {
         ))}
       </div>
       <Button variant="outline" block onClick={onSeeAll}>
-        See All Progress →
+        See All Progress <Icon name="arrowRight" size={14} />
       </Button>
     </Card>
   );

@@ -109,28 +109,8 @@ button {
   margin-bottom: 22px;
 }
 
-.sidebar__logo {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  line-height: 1.15;
-  color: var(--purple);
-}
-
-.sidebar__logo span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 19px;
-  height: 19px;
-  margin-left: 5px;
-  border-radius: 5px;
-  background: var(--purple);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  vertical-align: 2px;
+.role-screen__logo {
+  margin: 0 auto 10px;
 }
 
 .sidebar__nav {
@@ -522,18 +502,35 @@ button {
   border-radius: var(--r-xl);
   padding: 20px 22px 22px;
   color: #fff;
-  background: linear-gradient(120deg, #7c3aed 0%, #6d28d9 55%, #4c1d95 100%);
+  background: #4c1d95;
   box-shadow: var(--shadow-purple);
 }
 
-.pathway-card__art {
+/* Artwork fills the card; content sits above it. */
+.pathway-card__bg {
   position: absolute;
-  top: 6px;
-  right: 10px;
-  width: 42%;
-  max-width: 290px;
-  height: 128px;
+  inset: 0;
   pointer-events: none;
+}
+
+/* Scrim keeps the heading readable over the artwork's brighter right side. */
+.pathway-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(58, 18, 122, 0.94) 0%,
+    rgba(70, 24, 140, 0.82) 34%,
+    rgba(76, 29, 149, 0.42) 56%,
+    rgba(76, 29, 149, 0.12) 74%,
+    rgba(76, 29, 149, 0) 100%
+  );
+}
+
+/* Every direct child of the card except the artwork needs to stack above it. */
+.pathway-card > *:not(.pathway-card__bg) {
+  position: relative;
+  z-index: 1;
 }
 
 .pathway-card__eyebrow {
@@ -689,14 +686,21 @@ button {
 
 .stepper__node--current {
   background: var(--orange);
-  color: #fff;
   box-shadow: 0 0 0 4px rgba(255, 159, 28, 0.28);
 }
 
+/* Inner dot marks the active stage. */
+.stepper__node--current::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
 .stepper__node--todo {
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.32);
 }
 
 .stepper__label {
@@ -1215,8 +1219,8 @@ button {
     padding: 0;
   }
 
-  .sidebar__logo {
-    font-size: 15px;
+  .sidebar__brand img {
+    width: 118px !important;
   }
 
   .sidebar__toggle {
@@ -1269,10 +1273,6 @@ button {
   }
 
   .journey__arrow {
-    display: none;
-  }
-
-  .pathway-card__art {
     display: none;
   }
 

@@ -8,7 +8,7 @@ import JourneyStep from '../molecules/JourneyStep';
  */
 export default function JourneySection({ steps }) {
   return (
-    <Card title="Your Pathway Journey" icon="🛤️">
+    <Card title="Your Pathway Journey" icon="pathway">
       <ol className="journey">
         {steps.map((step, idx) => (
           <JourneyStep

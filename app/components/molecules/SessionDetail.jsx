@@ -11,7 +11,7 @@ export default function SessionDetail({ label, value, icon }) {
     <div className="session__row">
       <p className="session__label">{label}</p>
       <p className="session__value">
-        <Icon glyph={icon} />
+        <Icon name={icon} />
         {value}
       </p>
     </div>

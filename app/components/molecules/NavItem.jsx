@@ -14,7 +14,7 @@ export default function NavItem({ icon, label, active = false, onClick }) {
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
     >
-      <Icon glyph={icon} />
+      <Icon name={icon} />
       {label}
     </button>
   );

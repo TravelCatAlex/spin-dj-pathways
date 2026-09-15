@@ -12,16 +12,16 @@ export default function TopBar({ user, dateLabel, onViewProfile }) {
     <header className="topbar">
       <div>
         <h1 className="topbar__title">
-          Welcome back, {user.firstName}! <Icon glyph="👋" />
+          Welcome back, {user.firstName}! <Icon name="wave" />
         </h1>
         <p className="topbar__subtitle">Let&apos;s keep creating amazing things.</p>
       </div>
       <div className="topbar__right">
         <p className="topbar__date">
-          <Icon glyph="📅" /> {dateLabel}
+          <Icon name="calendar" /> {dateLabel}
         </p>
         <Button variant="soft" onClick={onViewProfile}>
-          <Icon glyph="👤" /> View My Profile
+          <Icon name="user" /> View My Profile
         </Button>
       </div>
     </header>

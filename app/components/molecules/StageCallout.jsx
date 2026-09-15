@@ -14,7 +14,7 @@ export default function StageCallout({ stage, nextAction, onGo }) {
         <p className="stage-callout__label">Stage</p>
         <p className="stage-callout__stage">{stage}</p>
         <p className="stage-callout__here">
-          <Icon glyph="📍" /> You&apos;re here
+          <Icon name="location" size={12} /> You&apos;re here
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export default function StageCallout({ stage, nextAction, onGo }) {
         aria-label={`Start: ${nextAction}`}
         onClick={onGo}
       >
-        ›
+        <Icon name="chevronRight" size={16} />
       </button>
     </div>
   );

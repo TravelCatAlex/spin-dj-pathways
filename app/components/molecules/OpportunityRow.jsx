@@ -23,7 +23,7 @@ export default function OpportunityRow({
           className="opp-row__icon"
           style={{ background: `${accent}1f`, color: accent }}
         >
-          <Icon glyph={icon} />
+          <Icon name={icon} />
         </span>
         <div>
           <p className="opp-row__title">{title}</p>

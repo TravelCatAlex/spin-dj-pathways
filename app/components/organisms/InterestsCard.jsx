@@ -10,7 +10,7 @@ import Icon from '../atoms/Icon';
  */
 export default function InterestsCard({ interests, onEdit, onSelect }) {
   return (
-    <Card title="Things I'm Into" icon="❤️">
+    <Card title="Things I'm Into" icon="heart">
       <div className="tag-grid">
         {interests.map((interest) => (
           <Tag
@@ -22,7 +22,7 @@ export default function InterestsCard({ interests, onEdit, onSelect }) {
         ))}
       </div>
       <Button block onClick={onEdit}>
-        Edit My Interests <Icon glyph="✏️" />
+        Edit My Interests <Icon name="edit" />
       </Button>
     </Card>
   );
