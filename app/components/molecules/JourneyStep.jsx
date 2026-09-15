@@ -4,13 +4,19 @@ import Icon from '../atoms/Icon';
 
 /**
  * MOLECULE — JourneyStep
- * One circle + title + description in the Pathway Journey stepper.
+ * One coloured circle + title + description in the Pathway Journey stepper.
  */
-export default function JourneyStep({ icon, title, description, showArrow }) {
+export default function JourneyStep({ icon, title, description, accent, showArrow }) {
   return (
     <li className="journey__step">
-      <div className="journey__icon">
-        <Icon name={icon} />
+      <div
+        className="journey__icon"
+        style={{
+          background: accent,
+          boxShadow: `0 6px 14px ${accent}47`,
+        }}
+      >
+        <Icon name={icon} size={20} />
       </div>
       <p className="journey__title">{title}</p>
       <p className="journey__desc">{description}</p>

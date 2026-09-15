@@ -4,15 +4,18 @@ import Icon from './Icon';
 
 /**
  * ATOM — Tag
- * Icon + label tile used for interests.
+ * Pill-shaped interest chip: tinted circular icon beside the label.
  */
-export default function Tag({ icon, name, onClick }) {
+export default function Tag({ icon, name, accent, onClick }) {
   return (
     <button type="button" className="tag" onClick={onClick}>
-      <p className="tag__icon">
-        <Icon name={icon} />
-      </p>
-      <p className="tag__name">{name}</p>
+      <span
+        className="tag__icon"
+        style={accent ? { background: `${accent}24`, color: accent } : undefined}
+      >
+        <Icon name={icon} size={13} />
+      </span>
+      <span className="tag__name">{name}</span>
     </button>
   );
 }

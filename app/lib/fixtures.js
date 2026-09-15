@@ -26,15 +26,26 @@ export const NAV_ITEMS = [
 ];
 
 export const CONTEXT_CHIPS = [
-  { id: 'program', label: 'Program', value: 'Podcasting', icon: 'mic' },
-  { id: 'org', label: 'Organization', value: 'Sid Jacobson JCC', icon: 'organization' },
-  { id: 'class', label: 'Class', value: 'Podcasting Group 1', icon: 'users' },
   {
-    id: 'profile',
-    label: 'Profile',
-    value: 'View My Profile',
-    icon: 'user',
-    action: true,
+    id: 'program',
+    label: 'Program',
+    value: 'Podcasting',
+    icon: 'mic',
+    accent: '#7c3aed',
+  },
+  {
+    id: 'org',
+    label: 'Organization',
+    value: 'Sid Jacobson JCC',
+    icon: 'organization',
+    accent: '#3b82f6',
+  },
+  {
+    id: 'class',
+    label: 'Class',
+    value: 'Podcasting Group 1',
+    icon: 'users',
+    accent: '#14b8a6',
   },
 ];
 
@@ -83,12 +94,12 @@ export const NEXT_SESSION = {
 };
 
 export const INTERESTS = [
-  { id: 'marvel', name: 'Marvel', icon: 'superhero' },
-  { id: 'music', name: 'Music', icon: 'music' },
-  { id: 'podcasts', name: 'Podcasts', icon: 'mic' },
-  { id: 'wwe', name: 'WWE', icon: 'trophy' },
-  { id: 'gaming', name: 'Gaming', icon: 'gaming' },
-  { id: 'youtube', name: 'YouTube', icon: 'youtube' },
+  { id: 'marvel', name: 'Marvel', icon: 'superhero', accent: '#e11d48' },
+  { id: 'wwe', name: 'WWE', icon: 'trophy', accent: '#f59e0b' },
+  { id: 'music', name: 'Music', icon: 'music', accent: '#7c3aed' },
+  { id: 'gaming', name: 'Gaming', icon: 'gaming', accent: '#3b82f6' },
+  { id: 'podcasts', name: 'Podcasts', icon: 'mic', accent: '#14b8a6' },
+  { id: 'youtube', name: 'YouTube', icon: 'youtube', accent: '#ef4444' },
 ];
 
 export const PROGRESS_ITEMS = [
@@ -163,6 +174,7 @@ export const OPPORTUNITIES = [
     icon: 'headphones',
     when: 'Jun 14, 2026 - 2:00 PM',
     accent: '#7c3aed',
+    cta: "I'm Interested",
   },
   {
     id: 'op-2',
@@ -170,6 +182,7 @@ export const OPPORTUNITIES = [
     icon: 'video',
     when: 'Jun 14, 2026 - 2:00 PM',
     accent: '#10b981',
+    cta: 'View',
   },
   {
     id: 'op-3',
@@ -177,6 +190,7 @@ export const OPPORTUNITIES = [
     icon: 'mic',
     when: 'Jun 14, 2026 - 2:00 PM',
     accent: '#f59e0b',
+    cta: "I'm Interested",
   },
   {
     id: 'op-4',
@@ -184,40 +198,58 @@ export const OPPORTUNITIES = [
     icon: 'star',
     when: 'Jun 14, 2026 - 2:00 PM',
     accent: '#7c3aed',
+    cta: 'View',
   },
 ];
 
 export const PATHWAY_JOURNEY = [
-  { id: 'j-1', title: 'Intake', description: 'Your interests and goals', icon: 'user' },
-  { id: 'j-2', title: 'Suplabase', description: 'Securely stores your data', icon: 'database' },
+  {
+    id: 'j-1',
+    title: 'Intake',
+    description: 'Your interests and goals',
+    icon: 'user',
+    accent: '#7c3aed',
+  },
+  {
+    id: 'j-2',
+    title: 'Supabase',
+    description: 'Securely stores your data',
+    icon: 'database',
+    accent: '#3b82f6',
+  },
   {
     id: 'j-3',
     title: 'Rules Recommendation',
-    description: 'AI-driven learning path',
+    description: 'AI + Rules recommend your pathway',
     icon: 'brain',
+    accent: '#14b8a6',
   },
   {
     id: 'j-4',
     title: 'Teacher Review',
     description: 'Coach reviews and personalizes',
     icon: 'teacher',
+    accent: '#f59e0b',
   },
   {
     id: 'j-5',
     title: 'Your Pathway',
     description: 'Personalized learning just for you',
     icon: 'pathway',
+    accent: '#8b5cf6',
   },
   {
     id: 'j-6',
     title: 'Projects & Progress',
-    description: 'Create, learn, and grow',
+    description: 'Create, learn and grow',
     icon: 'chart',
+    accent: '#ec4899',
   },
   {
     id: 'j-7',
     title: 'Artifacts & Achievements',
     description: 'Show your progress to the world',
     icon: 'trophy',
+    accent: '#10b981',
   },
 ];

@@ -5,7 +5,8 @@ import Button from '../atoms/Button';
 
 /**
  * MOLECULE — OpportunityRow
- * Accent-bordered row with a tinted icon badge and an interest toggle.
+ * Circular tinted icon + copy + action. `cta` picks the wording — some
+ * opportunities invite interest, others just link through.
  * Stateless: the parent organism owns `interested`.
  */
 export default function OpportunityRow({
@@ -13,9 +14,13 @@ export default function OpportunityRow({
   when,
   icon,
   accent,
+  cta = "I'm Interested",
   interested = false,
   onToggle,
 }) {
+  const isInterestCta = cta === "I'm Interested";
+  const label = interested ? '✓ Interested' : cta;
+
   return (
     <div className="opp-row" style={{ borderLeftColor: accent }}>
       <div className="opp-row__main">
@@ -23,7 +28,7 @@ export default function OpportunityRow({
           className="opp-row__icon"
           style={{ background: `${accent}1f`, color: accent }}
         >
-          <Icon name={icon} />
+          <Icon name={icon} size={15} />
         </span>
         <div>
           <p className="opp-row__title">{title}</p>
@@ -34,15 +39,15 @@ export default function OpportunityRow({
         size="sm"
         variant="outline"
         className="opp-row__cta"
-        aria-pressed={interested}
+        aria-pressed={isInterestCta ? interested : undefined}
         onClick={onToggle}
         style={
-          interested
+          interested && isInterestCta
             ? { background: accent, color: '#fff', borderColor: accent }
             : { color: accent, borderColor: `${accent}59` }
         }
       >
-        {interested ? '✓ Interested' : "I'm Interested"}
+        {isInterestCta ? label : cta}
       </Button>
     </div>
   );

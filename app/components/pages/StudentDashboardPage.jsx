@@ -70,8 +70,10 @@ export default function StudentDashboardPage({ onLogout }) {
             <FeedbackCard feedback={LATEST_FEEDBACK} />
           </div>
 
-          <CreationsSection creations={CREATIONS} />
-          <OpportunitiesSection opportunities={OPPORTUNITIES} />
+          <div className="grid-split">
+            <CreationsSection creations={CREATIONS} />
+            <OpportunitiesSection opportunities={OPPORTUNITIES} />
+          </div>
           <JourneySection steps={PATHWAY_JOURNEY} />
         </>
       ) : (

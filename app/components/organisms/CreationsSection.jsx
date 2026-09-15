@@ -12,7 +12,6 @@ export default function CreationsSection({ creations, onViewAll, onOpen }) {
     <Card
       title="My Creations"
       icon="film"
-      className="section-gap"
       action={
         <Button variant="ghost" onClick={onViewAll}>
           View All

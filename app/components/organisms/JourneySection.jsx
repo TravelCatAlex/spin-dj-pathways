@@ -16,6 +16,7 @@ export default function JourneySection({ steps }) {
             icon={step.icon}
             title={step.title}
             description={step.description}
+            accent={step.accent}
             showArrow={idx < steps.length - 1}
           />
         ))}

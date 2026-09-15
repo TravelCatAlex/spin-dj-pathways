@@ -4,30 +4,21 @@ import Icon from '../atoms/Icon';
 
 /**
  * MOLECULE — ContextChip
- * Label-over-value chip. With `action` it renders as a pill button instead.
+ * One divided section of the context bar: tinted icon tile + label/value.
  */
-export default function ContextChip({ label, value, icon, action, onClick }) {
-  if (action) {
-    return (
-      <button
-        type="button"
-        className="context-chip context-chip--action"
-        onClick={onClick}
-      >
-        <Icon name={icon} />
-        {value}
-        <Icon name="chevronRight" size={14} />
-      </button>
-    );
-  }
-
+export default function ContextChip({ label, value, icon, accent, onClick }) {
   return (
     <button type="button" className="context-chip" onClick={onClick}>
-      <p className="context-chip__label">{label}</p>
-      <p className="context-chip__value">
-        <Icon name={icon} />
-        {value}
-      </p>
+      <span
+        className="context-chip__tile"
+        style={accent ? { background: `${accent}1f`, color: accent } : undefined}
+      >
+        <Icon name={icon} size={15} />
+      </span>
+      <span className="context-chip__text">
+        <p className="context-chip__label">{label}</p>
+        <p className="context-chip__value">{value}</p>
+      </span>
     </button>
   );
 }

@@ -17,6 +17,7 @@ export default function InterestsCard({ interests, onEdit, onSelect }) {
             key={interest.id}
             icon={interest.icon}
             name={interest.name}
+            accent={interest.accent}
             onClick={() => onSelect?.(interest)}
           />
         ))}

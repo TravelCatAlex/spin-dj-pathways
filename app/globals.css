@@ -402,62 +402,97 @@ button {
   gap: 7px;
 }
 
-/* ---------- Context chips row ---------------------------------------- */
+/* ---------- Context bar (one card, divided sections) ------------------ */
 
-.context-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-  gap: 12px;
-  margin-bottom: 18px;
+.context-bar {
+  display: flex;
   align-items: stretch;
+  gap: 0;
+  margin-bottom: 18px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .context-chip {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm);
-  padding: 11px 15px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   text-align: left;
-  width: 100%;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease;
+}
+
+.context-chip + .context-chip {
+  border-left: 1px solid var(--line);
+  border-radius: 0 10px 10px 0;
+}
+
+.context-chip:hover {
+  background: var(--purple-50);
+}
+
+/* Small tinted rounded-square icon tile. */
+.context-chip__tile {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--purple-50);
+  color: var(--purple);
+}
+
+.context-chip__text {
+  min-width: 0;
 }
 
 .context-chip__label {
-  margin: 0 0 3px;
+  margin: 0;
   font-size: 10px;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
+  letter-spacing: 0.4px;
   color: var(--muted);
-  font-weight: 600;
 }
 
 .context-chip__value {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
-  display: flex;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Profile shortcut pinned to the right of the bar. */
+.context-bar__profile {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
   align-items: center;
   gap: 7px;
-}
-
-/* The profile shortcut reads as a button, not a data chip. */
-.context-chip--action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 18px;
+  margin-left: 6px;
+  padding: 9px 15px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
   color: var(--purple);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
-  width: auto;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.context-chip--action:hover {
+.context-bar__profile:hover {
   border-color: var(--purple);
-  box-shadow: var(--shadow-md);
+  background: var(--purple-50);
 }
 
 /* ---------- Layout grids --------------------------------------------- */
@@ -478,10 +513,20 @@ button {
   align-items: start;
 }
 
-.grid-two {
+/* My Creations (wider) beside Upcoming Opportunities. */
+.grid-split {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+
+/* Opportunities stack as a list, not a grid. */
+.opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .grid-media {
@@ -765,6 +810,9 @@ button {
 }
 
 .session__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   font-size: 12px;
   color: var(--muted);
@@ -790,11 +838,14 @@ button {
 }
 
 .tag {
-  padding: 11px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 999px;
   background: #fafaff;
-  text-align: center;
+  text-align: left;
   transition: background 0.15s ease, border-color 0.15s ease,
     transform 0.12s ease;
 }
@@ -805,15 +856,24 @@ button {
   transform: translateY(-1px);
 }
 
+/* Tinted circular icon, coloured per interest. */
 .tag__icon {
-  margin: 0 0 3px;
-  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
 }
 
 .tag__name {
   margin: 0;
   font-size: 11.5px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Progress list --------------------------------------------- */
@@ -1035,6 +1095,7 @@ button {
   padding: 0 4px;
 }
 
+/* Colour comes from the step's own accent, set inline. */
 .journey__icon {
   width: 46px;
   height: 46px;
@@ -1042,9 +1103,7 @@ button {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 19px;
-  background: linear-gradient(135deg, var(--purple), var(--purple-700));
-  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.28);
+  color: #fff;
 }
 
 .journey__title {
@@ -1064,10 +1123,9 @@ button {
 .journey__arrow {
   position: absolute;
   top: 23px;
-  right: -13px;
+  right: -11px;
   transform: translateY(-50%);
-  color: var(--purple);
-  font-size: 14px;
+  color: var(--muted);
   line-height: 1;
 }
 
@@ -1166,12 +1224,16 @@ button {
     padding: 22px 18px 40px;
   }
 
-  .context-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .context-bar {
+    flex-wrap: wrap;
   }
 
-  .context-chip--action {
-    width: 100%;
+  .context-chip {
+    flex: 1 1 45%;
+  }
+
+  .grid-split {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .grid-three,
@@ -1261,11 +1323,26 @@ button {
     align-items: flex-start;
   }
 
-  .context-row,
   .grid-three,
-  .grid-media,
-  .grid-two {
+  .grid-media {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .context-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px;
+  }
+
+  .context-chip + .context-chip {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 10px;
+  }
+
+  .context-bar__profile {
+    margin: 6px 0 0;
+    justify-content: center;
   }
 
   .journey {
