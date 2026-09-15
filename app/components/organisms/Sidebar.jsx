@@ -19,7 +19,7 @@ const DRAWER_ID = 'sidebar-drawer';
  * flex children of the rail and the footer can sit at the bottom.
  * Mobile (<=760px): collapses to a sticky header row with a hamburger.
  */
-export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
+export default function Sidebar({ user, activeTab, onTabChange, onLogout, onProfileClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const railRef = useRef(null);
@@ -48,6 +48,11 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
 
   const handleTabChange = (id) => {
     onTabChange(id);
+    setMenuOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    onProfileClick?.();
     setMenuOpen(false);
   };
 
@@ -83,9 +88,15 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
       </div>
 
       <div className="max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3">
-        <div className="mb-[22px] px-1.5 max-[760px]:mb-0 max-[760px]:p-0">
+        {/* The wordmark returns to Home, the way a site logo is expected to. */}
+        <button
+          type="button"
+          onClick={() => handleTabChange('home')}
+          aria-label="Spin DJ Pathways — go to Home"
+          className="mb-[22px] block cursor-pointer rounded-[10px] border-0 bg-transparent px-1.5 transition-opacity duration-150 ease-out hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple max-[760px]:mb-0 max-[760px]:p-0"
+        >
           <Logo width={150} priority className="max-[760px]:!w-[118px]" />
-        </div>
+        </button>
 
         <MenuToggle
           open={menuOpen}
@@ -119,16 +130,23 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout }) {
         {/* No divider rule: the wash's curved edge does that job on desktop,
             so the hairline only comes back once the wash is hidden. */}
         <div className="relative z-[1] mt-auto pt-9 max-[760px]:mt-3 max-[760px]:flex max-[760px]:items-center max-[760px]:justify-between max-[760px]:gap-3 max-[760px]:border-t max-[760px]:border-line max-[760px]:pt-3">
-          <div className="mb-3 flex items-center gap-[11px] px-1.5 py-1 max-[760px]:mb-0">
+          <button
+            type="button"
+            onClick={handleProfileClick}
+            aria-label={`${user.firstName}, ${user.role} — open profile`}
+            className="mb-3 flex w-full items-center gap-[11px] rounded-[10px] border-0 bg-transparent px-1.5 py-1 text-left transition-colors duration-150 ease-out hover:bg-purple-100/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple max-[760px]:mb-0 max-[760px]:w-auto"
+          >
             <Avatar name={user.firstName} src={user.avatarUrl} size={38} ring />
-            <div>
-              <p className="m-0 text-[13px] font-bold">{user.firstName}</p>
-              <p className="m-0 text-[11.5px] text-muted">{user.role}</p>
-            </div>
+            {/* Spans, not divs: a button may only contain phrasing content, and
+                a div inside one breaks hydration. */}
+            <span className="block">
+              <span className="block text-[13px] font-bold">{user.firstName}</span>
+              <span className="block text-[11.5px] text-muted">{user.role}</span>
+            </span>
             <span className="ml-auto text-[11px] text-muted max-[760px]:hidden">
               <Icon name="chevronDown" size={14} />
             </span>
-          </div>
+          </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-[10px] border border-transparent bg-transparent px-3 py-[9px] text-[13px] text-ink-soft transition-colors duration-150 ease-out hover:text-purple max-[760px]:w-auto max-[760px]:border-line max-[760px]:bg-surface"

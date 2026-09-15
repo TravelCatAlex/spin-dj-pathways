@@ -12,6 +12,7 @@ export default function DashboardLayout({
   activeTab,
   onTabChange,
   onLogout,
+  onProfileClick,
   children,
 }) {
   return (
@@ -21,6 +22,7 @@ export default function DashboardLayout({
         activeTab={activeTab}
         onTabChange={onTabChange}
         onLogout={onLogout}
+        onProfileClick={onProfileClick}
       />
       <main className="min-w-0 flex-1 px-[30px] pb-12 pt-[26px] max-[980px]:px-[18px] max-[980px]:pb-10 max-[980px]:pt-[22px]">
         {children}

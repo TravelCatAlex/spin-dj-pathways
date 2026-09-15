@@ -35,6 +35,7 @@ const STUBS = {
   creations: ['My Creations', 'Coming soon: portfolio and creation showcase'],
   pathway: ['My Pathway', 'Coming soon: learning progress and pathway quiz'],
   events: ['Events', 'Coming soon: event calendar and opportunities'],
+  profile: ['My Profile', 'Coming soon: your profile, avatar and account settings'],
 };
 
 /* Every section row shares one 12-column rhythm, so the columns line up
@@ -57,12 +58,16 @@ export default function StudentDashboardPage({ onLogout }) {
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onLogout={onLogout}
+      onProfileClick={() => setActiveTab('profile')}
     >
       {activeTab === 'home' ? (
         <>
           <TopBar user={CURRENT_USER} dateLabel={DASHBOARD_DATE} />
 
-          <ContextRow chips={CONTEXT_CHIPS} />
+          <ContextRow
+            chips={CONTEXT_CHIPS}
+            onViewProfile={() => setActiveTab('profile')}
+          />
 
           {/* Pathway 8 | Next Session 4 — stacked below 1180px. */}
           <div
