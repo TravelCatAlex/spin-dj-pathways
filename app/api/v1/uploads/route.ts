@@ -368,3 +368,122 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
 }
+
+/**
+ * DELETE /api/v1/uploads
+ * Body: { creationId, studentId }
+ *
+ * Removes the object from storage AND the row that records it.
+ *
+ * STORAGE FIRST, THEN THE ROW, and the order is the whole design here.
+ *
+ *   row first  -> if the storage call then fails, the object survives with
+ *                 nothing pointing at it. The student sees their file gone, so
+ *                 nobody ever looks for it again, and it sits in the bucket
+ *                 costing money for ever. An orphan nothing can even count.
+ *
+ *   storage first -> if the row delete then fails, the row points at an object
+ *                 that is no longer there. That is visible: the tile is still
+ *                 listed and its signed URL 404s. Ugly, and FIXABLE by pressing
+ *                 delete again, because removing an already-absent object
+ *                 succeeds.
+ *
+ * So the failure that can be retried is the one we choose to risk. Neither
+ * order is atomic - Storage and Postgres do not share a transaction - and
+ * pretending otherwise would be the real mistake.
+ *
+ * SCOPED BY studentId, which today is WEAK and still worth doing. With no auth
+ * a caller can claim any id, so this stops a wrong id rather than a determined
+ * one. It costs nothing and it means the query is already the right shape when
+ * the id stops being something the caller supplies.
+ */
+export async function DELETE(request: Request): Promise<NextResponse> {
+  let body: { creationId?: unknown; studentId?: unknown } = {};
+  try {
+    body = (await request.json()) as { creationId?: unknown; studentId?: unknown };
+  } catch {
+    /* handled below */
+  }
+
+  const creationId = asText(body.creationId);
+  const studentId = asText(body.studentId);
+  if (creationId === null || studentId === null) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'ids_required',
+          message: 'creationId and studentId are required.',
+        },
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const db = serverSupabase();
+
+    // Read the path from the row rather than taking it from the caller: a
+    // caller-supplied path is a caller-supplied delete of anything in the
+    // bucket.
+    const { data: row, error: findError } = await db
+      .from('creation')
+      .select('id, storage_path')
+      .eq('id', creationId)
+      .eq('student_id', studentId)
+      .maybeSingle();
+
+    if (findError !== null) {
+      console.error('creation lookup failed', findError);
+      return NextResponse.json(
+        { error: { code: 'delete_failed', message: 'Could not delete the file.' } },
+        { status: 502 },
+      );
+    }
+
+    if (row === null) {
+      // Already gone, or never theirs. Both answer the same to the caller, and
+      // saying which would tell a prober whether an id exists.
+      return NextResponse.json(
+        { error: { code: 'not_found', message: 'No such file.' } },
+        { status: 404 },
+      );
+    }
+
+    const { error: storageError } = await db.storage
+      .from(bucketName())
+      .remove([row.storage_path as string]);
+
+    if (storageError !== null) {
+      // Stop here. Removing the row now would leave the object orphaned with
+      // nothing able to find it again.
+      console.error('storage remove failed', storageError);
+      return NextResponse.json(
+        { error: { code: 'delete_failed', message: 'Could not delete the file.' } },
+        { status: 502 },
+      );
+    }
+
+    const { error: rowError } = await db.from('creation').delete().eq('id', creationId);
+
+    if (rowError !== null) {
+      console.error('creation delete failed', rowError);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'partly_deleted',
+            message: 'The file is gone but its record remains. Try again.',
+          },
+        },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({ ok: true, id: creationId });
+  } catch (err) {
+    console.error('delete route failed', err);
+    return NextResponse.json(
+      { error: { code: 'not_configured', message: 'Storage is not configured.' } },
+      { status: 500 },
+    );
+  }
+}

@@ -51,6 +51,8 @@ const TONES = {
     button:
       'border-white/20 bg-white/[0.12] text-white hover:border-white/35 hover:bg-white/20 focus-visible:outline-white',
     skeleton: 'dark',
+    deleteButton:
+      'border-white/20 bg-black/40 text-white hover:border-rose-300/60 hover:bg-rose-500/30 focus-visible:outline-white',
   },
   light: {
     eyebrow: `${EYEBROW} text-ink/60`,
@@ -63,6 +65,8 @@ const TONES = {
     button:
       'border-black/10 bg-ink/[0.06] text-ink hover:border-black/25 hover:bg-ink/[0.12] focus-visible:outline-ink',
     skeleton: 'light',
+    deleteButton:
+      'border-black/10 bg-white/90 text-ink hover:border-rose-400/60 hover:bg-rose-50 focus-visible:outline-ink',
   },
 };
 
@@ -173,6 +177,9 @@ export default function ProjectUploads({
   const [state, setState] = useState('loading'); // loading | ready | failed
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // The file awaiting confirmation. Null when the dialog is closed.
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const inputRef = useRef(null);
 
   const refresh = useCallback(async () => {
@@ -246,6 +253,31 @@ export default function ProjectUploads({
       // Let the same file be picked again after a failure; without this the
       // input still holds it and onChange never fires a second time.
       if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+  async function confirmDelete() {
+    if (pendingDelete === null) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/uploads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creationId: pendingDelete.id, studentId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? 'Could not delete the file.');
+      }
+      setPendingDelete(null);
+      await refresh();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Could not delete the file.');
+      // THE DIALOG STAYS OPEN ON FAILURE. Closing it would report success by
+      // implication, and the file would still be there the next time they looked.
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -349,7 +381,28 @@ export default function ProjectUploads({
             const kind = fileKind(f);
             const size = readableSize(f.size);
             return (
-              <m.li key={f.path} variants={rise}>
+              <m.li key={f.path} variants={rise} className="group relative">
+                {/* A BUTTON CANNOT LIVE INSIDE THE ANCHOR - nesting interactive
+                    elements is invalid HTML and a screen reader reads it as one
+                    confused control - so it is a sibling positioned over the
+                    corner instead.
+
+                    Visible on hover AND on focus: hover-only would make deleting
+                    impossible from a keyboard, and on a touch screen there is no
+                    hover at all, which is why it also stays visible below the
+                    hover breakpoint. */}
+                <button
+                  type="button"
+                  aria-label={`Delete ${f.name}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPendingDelete(f);
+                  }}
+                  className={`absolute right-1.5 top-1.5 z-[1] inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 max-[860px]:opacity-100 ${t.deleteButton}`}
+                >
+                  <Icon name="trash" size={12} aria-hidden="true" />
+                </button>
+
                 <m.a
                   href={f.signedUrl ?? '#'}
                   target="_blank"
@@ -374,6 +427,75 @@ export default function ProjectUploads({
             );
           })}
         </m.ul>
+      )}
+
+      {/* THE CONFIRMATION.
+          Deleting a student's own recording is not undoable - the object leaves
+          the bucket and the row leaves the table - so it asks first, and says
+          plainly that it cannot be undone rather than the usual "are you sure?"
+          which tells the reader nothing they did not know.
+
+          The file's NAME is in the question. "Delete this file?" over a grid of
+          tiles leaves the reader checking which one they clicked; naming it
+          means the dialog answers that itself. */}
+      {pendingDelete !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-file-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => {
+            if (!deleting) setPendingDelete(null);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[400px] rounded-xl border border-line bg-surface p-5 shadow-lg"
+          >
+            <div className="mb-3 flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                <Icon name="warning" size={16} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  id="delete-file-title"
+                  className="m-0 text-[15px] font-extrabold text-ink"
+                >
+                  Delete this file?
+                </h2>
+                <p className="m-0 mt-1 break-words text-[12.5px] text-ink/70">
+                  <span className="font-semibold">{pendingDelete.name}</span> will be
+                  removed from your files. <strong>This cannot be undone.</strong>
+                </p>
+              </div>
+            </div>
+
+            {error !== null && (
+              <p role="alert" className="mb-3 text-[12.5px] text-rose-600">
+                {error}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setPendingDelete(null)}
+                className="rounded-[10px] border border-black/10 px-3.5 py-2 text-[12.5px] font-semibold text-ink transition-colors hover:bg-black/[0.04] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDelete}
+                className="rounded-[10px] bg-rose-600 px-3.5 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-rose-700 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

@@ -1,4 +1,6 @@
 import {
+  Trash2,
+  AlertTriangle,
   FileType2 as FileTypePdf,
   FileArchive,
   Image as ImageIcon,
@@ -95,6 +97,8 @@ export const ICONS = {
   clock: Clock,
   duration: Hourglass,
   seats: Users2,
+  trash: Trash2,
+  warning: AlertTriangle,
   mixer: SlidersHorizontal,
   headphones: Headphones,
   music: Music,
