@@ -5,6 +5,7 @@ import { AnimatePresence, m } from 'motion/react';
 
 import NavItem from '../molecules/NavItem';
 import Avatar from '../atoms/Avatar';
+import Skeleton from '../atoms/Skeleton';
 import MenuToggle from '../atoms/MenuToggle';
 import Icon from '../atoms/Icon';
 import Logo from '../atoms/Logo';
@@ -22,7 +23,14 @@ const DRAWER_ID = 'sidebar-drawer';
  * Mobile (<=760px): collapses to a sticky header row with a hamburger, and
  * the drawer becomes a real dropdown that can animate both in and out.
  */
-export default function Sidebar({ user, activeTab, onTabChange, onLogout, onProfileClick }) {
+export default function Sidebar({
+  user,
+  activeTab,
+  onTabChange,
+  onLogout,
+  onProfileClick,
+  loading = false,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const railRef = useRef(null);
 
@@ -106,15 +114,42 @@ export default function Sidebar({ user, activeTab, onTabChange, onLogout, onProf
         <button
           type="button"
           onClick={handleProfileClick}
-          aria-label={`${user.firstName}, ${user.role} — open profile`}
+          aria-label={loading ? 'Loading your profile' : `${user.firstName}, ${user.role} — open profile`}
           className="mb-3 flex w-full items-center gap-[11px] rounded-[10px] border-0 bg-transparent px-1.5 py-1 text-left transition-colors duration-150 ease-out hover:bg-purple-100/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple max-[760px]:mb-0 max-[760px]:w-auto"
         >
-          <Avatar name={user.firstName} src={user.avatarUrl} size={38} ring />
+          {/* The avatar waits too. It draws the INITIAL of whatever name it is
+              given, so with the fixture still in place it showed an "A" and then
+              became a "B" - the same wrong-name flash as the text beside it,
+              one letter at a time. A circle of the identical size keeps the row
+              from shifting when the real one lands. */}
+          {loading ? (
+            <span className="relative block h-[38px] w-[38px] shrink-0 overflow-hidden rounded-full">
+              <Skeleton tone="light" rounded="rounded-full" />
+            </span>
+          ) : (
+            <Avatar name={user.firstName} src={user.avatarUrl} size={38} ring />
+          )}
           {/* Spans, not divs: a button may only contain phrasing content, and
               a div inside one breaks hydration. */}
           <span className="block">
-            <span className="block text-[13px] font-bold">{user.firstName}</span>
-            <span className="block text-[11.5px] text-muted">{user.role}</span>
+            {/* The fixture's name would otherwise sit here and then change to
+                the real one - a reader who glanced at the wrong second saw a
+                name that was never theirs. */}
+            {loading ? (
+              <>
+                <span className="relative block h-[13px] w-20 overflow-hidden rounded">
+                  <Skeleton tone="light" rounded="rounded" />
+                </span>
+                <span className="relative mt-1.5 block h-[11px] w-14 overflow-hidden rounded">
+                  <Skeleton tone="light" rounded="rounded" />
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="block text-[13px] font-bold">{user.firstName}</span>
+                <span className="block text-[11.5px] text-muted">{user.role}</span>
+              </>
+            )}
           </span>
           <span className="ml-auto text-[11px] text-muted max-[760px]:hidden">
             <Icon name="chevronDown" size={14} />

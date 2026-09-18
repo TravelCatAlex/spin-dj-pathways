@@ -3,6 +3,7 @@
 import { m } from 'motion/react';
 
 import Icon from '../atoms/Icon';
+import Skeleton from '../atoms/Skeleton';
 import { delayedRise, TOPBAR_TIMES } from '../../lib/motion';
 
 /**
@@ -13,7 +14,7 @@ import { delayedRise, TOPBAR_TIMES } from '../../lib/motion';
  * arrive in reading order — who you are, the encouragement, then the date —
  * and nothing here responds to hover, because nothing here is clickable.
  */
-export default function TopBar({ user, dateLabel }) {
+export default function TopBar({ loading = false, user, dateLabel }) {
   return (
     <header className="mb-[18px] flex flex-wrap items-center justify-between gap-4">
       <div>
@@ -22,7 +23,18 @@ export default function TopBar({ user, dateLabel }) {
           custom={TOPBAR_TIMES.title}
           className="m-0 mb-[3px] text-[25px] font-extrabold tracking-[-0.5px]"
         >
-          Welcome back, {user.firstName}!{' '}
+          {/* The name is the only unknown in this line, so only the name waits.
+              Skeletoning the whole greeting would blank a sentence we can
+              already write. */}
+          Welcome back,{' '}
+          {loading ? (
+            <span className="relative inline-block h-[19px] w-28 overflow-hidden rounded align-middle">
+              <Skeleton tone="light" rounded="rounded" />
+            </span>
+          ) : (
+            user.firstName
+          )}
+          !{' '}
           {/* The one emoji on the page. Decorative, so it is hidden from
               screen readers — "Welcome back, Avery! waving hand" is noise,
               and the greeting already says everything the glyph does. */}
