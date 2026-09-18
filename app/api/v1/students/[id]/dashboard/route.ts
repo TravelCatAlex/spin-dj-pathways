@@ -36,6 +36,7 @@ interface StudentRow {
   last_name: string | null;
   email: string | null;
   phone: string | null;
+  date_of_birth: string | null;
 }
 
 interface SessionRow {
@@ -95,7 +96,7 @@ export async function GET(
 
   const { data: students, error: studentError } = await db
     .from('student')
-    .select('id, first_name, last_name, email, phone')
+    .select('id, first_name, last_name, email, phone, date_of_birth')
     .eq('id', id)
     .limit(1);
 
@@ -255,7 +256,13 @@ export async function GET(
       firstName: student.first_name,
       lastName: student.last_name,
       email: student.email,
+      // Selected all along and never returned, so the profile screen had a
+      // phone number in the database and none to show.
+      phone: student.phone,
+      dateOfBirth: student.date_of_birth,
       role: 'Student',
+      // A real person has no uploaded avatar here. Null rather than a stock
+      // image: a placeholder face reads as somebody's photo.
       avatarUrl: null,
     },
     context: {

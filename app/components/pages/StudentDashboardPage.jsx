@@ -15,11 +15,13 @@ import FeedbackCard from '../organisms/FeedbackCard';
 import NextProjectsCard from '../organisms/NextProjectsCard';
 import OpportunitiesSection from '../organisms/OpportunitiesSection';
 import JourneySection from '../organisms/JourneySection';
-import CreationsSection from '../organisms/CreationsSection';
 import ProjectUploads from '../organisms/ProjectUploads';
+import ProfileCard from '../organisms/ProfileCard';
+import CreationsSection from '../organisms/CreationsSection';
 
 import { useLiveDashboard } from '../../lib/live-data';
 import {
+  CREATIONS,
   CURRENT_PROJECT,
   INTERESTS,
   PROGRESS_ITEMS,
@@ -28,7 +30,6 @@ import {
   OPPORTUNITIES,
   PATHWAY_JOURNEY,
   JOURNEY_NOTE,
-  CREATIONS,
 } from '../../lib/fixtures';
 
 /** Non-Home tabs are intentionally stubbed for this UI-only milestone. */
@@ -36,7 +37,6 @@ const STUBS = {
   projects: ['My Projects', 'Coming soon: full project management view'],
   pathway: ['My Pathway', 'Coming soon: learning progress and pathway quiz'],
   events: ['Events', 'Coming soon: event calendar and opportunities'],
-  profile: ['My Profile', 'Coming soon: your profile, avatar and account settings'],
 };
 
 /* Every section reveals when it is scrolled to, at every breakpoint.
@@ -145,6 +145,7 @@ export default function StudentDashboardPage({ onLogout }) {
             >
               <CurrentProjectCard
                   project={CURRENT_PROJECT}
+                  studentId={live.isLive ? live.user.id : null}
                   onViewAllUploads={() => setActiveTab('creations')}
                 />
               <NextSessionCard session={live.nextSession} />
@@ -187,6 +188,23 @@ export default function StudentDashboardPage({ onLogout }) {
               </Reveal>
             </div>
           </>
+        ) : activeTab === 'profile' ? (
+          <>
+            <Reveal
+              as="h1"
+              className="m-0 mb-5 text-left text-[24px] font-extrabold text-ink"
+            >
+              My Profile
+            </Reveal>
+            {/* Off the stub list entirely rather than kept with a flag: `student`
+                has carried the name, email and phone since the identity hub
+                landed, and attendance_record has carried the counts. A "coming
+                soon" panel over data that is already there is the one kind of
+                placeholder that actively misleads. */}
+            <Reveal inView>
+              <ProfileCard user={live.user} totals={live.sessions?.totals ?? null} />
+            </Reveal>
+          </>
         ) : activeTab === 'creations' ? (
           <>
             <Reveal
@@ -203,8 +221,9 @@ export default function StudentDashboardPage({ onLogout }) {
                 50 rather than 5: this is the "see everything" view the hero's
                 strip links to, and it is the reason that strip can stay short. */}
             <Reveal inView>
-              <div className="mb-[18px] rounded-xl border border-black/[0.06] bg-white p-[22px] max-[760px]:p-4">
+              <div className="mb-[18px] rounded-lg border border-line bg-surface p-4 shadow-sm max-[560px]:p-3.5">
                 <ProjectUploads
+                  studentId={live.isLive ? live.user.id : null}
                   limit={50}
                   tone="light"
                   title="Uploaded files"
@@ -213,9 +232,17 @@ export default function StudentDashboardPage({ onLogout }) {
               </div>
             </Reveal>
 
+            {/* STILL FIXTURES, AND STILL THE RIGHT CALL.
+                These three are the mock portfolio - titles, statuses, artwork -
+                and no `creation` row carries a title or a status, because a file
+                is not "In Progress". Feeding the real uploads in here once made
+                every card a filename with no badge, which is a worse answer than
+                an honest mock sitting under the real one. It goes live when
+                there is something to say beyond the file's own name. */}
             <Reveal inView>
               <CreationsSection creations={CREATIONS} />
             </Reveal>
+
           </>
         ) : (
           <>

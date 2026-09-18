@@ -30,7 +30,7 @@ import { CONTEXT_CHIPS, CURRENT_USER, DASHBOARD_DATE, NEXT_SESSION } from './fix
 // takes an id in the path and nobody signs in. When sign-in lands, this
 // constant and the id in the URL both disappear: the route becomes `me` and the
 // database answers for whoever is holding the session.
-const DEMO_STUDENT_ID =
+export const DEMO_STUDENT_ID =
   process.env.NEXT_PUBLIC_DEMO_STUDENT_ID ?? 'a3b3ca43-60a3-4049-9bd8-98dbf3c72c32';
 
 function toUser(profile) {
@@ -40,6 +40,8 @@ function toUser(profile) {
     firstName: profile.firstName ?? '',
     lastName: profile.lastName ?? '',
     email: profile.email ?? '',
+    phone: profile.phone ?? null,
+    dateOfBirth: profile.dateOfBirth ?? null,
     role: profile.role ?? 'Student',
     // A real person has no uploaded avatar, and borrowing the fixture's would
     // put a stock photo of someone else on their account.
@@ -154,7 +156,6 @@ function toNextSession(session) {
       label: 'Class',
       icon: 'users',
       value: session.cohort.name,
-      valueIcon: 'users',
     });
   }
   if (session.location?.label) {
@@ -163,7 +164,6 @@ function toNextSession(session) {
       label: 'Location',
       icon: 'location',
       value: session.location.label,
-      valueIcon: 'location',
     });
   }
 

@@ -76,7 +76,7 @@ const TONES = {
  */
 function fileKind(file) {
   const type = (file.contentType ?? '').toLowerCase();
-  const ext = (file.path.split('.').pop() ?? '').toLowerCase();
+  const ext = ((file.name ?? file.path).split('.').pop() ?? '').toLowerCase();
 
   if (type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext))
     return { icon: 'image', label: 'Image', isImage: true };
@@ -150,6 +150,17 @@ const GRID =
   'grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(124px,1fr))]';
 
 export default function ProjectUploads({
+  /**
+   * WHOSE FILES. Passed in rather than imported, so the page's live dashboard
+   * call is the ONE place that decides who the student is - this component used
+   * to reach for DEMO_STUDENT_ID itself, which meant a second answer to that
+   * question sitting in a component that has no business having one.
+   *
+   * NULL until that call lands, and nothing is fetched until it does. Firing
+   * with the fixture's id would be a request for a student that does not exist,
+   * answered with an error the user would see as "could not load your files".
+   */
+  studentId = null,
   limit = 5,
   tone = 'dark',
   title = 'Recordings',
@@ -165,8 +176,12 @@ export default function ProjectUploads({
   const inputRef = useRef(null);
 
   const refresh = useCallback(async () => {
+    if (studentId === null) return;
     try {
-      const res = await fetch(`/api/v1/uploads?limit=${limit}`, { cache: 'no-store' });
+      const res = await fetch(
+        `/api/v1/uploads?studentId=${encodeURIComponent(studentId)}&limit=${limit}`,
+        { cache: 'no-store' },
+      );
       if (!res.ok) throw new Error(`list failed: ${res.status}`);
       const body = await res.json();
       setFiles(body.files ?? []);
@@ -175,7 +190,7 @@ export default function ProjectUploads({
       console.error(err);
       setState('failed');
     }
-  }, [limit]);
+  }, [studentId, limit]);
 
   useEffect(() => {
     void refresh();
@@ -188,10 +203,15 @@ export default function ProjectUploads({
       const signRes = await fetch('/api/v1/uploads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name }),
+        body: JSON.stringify({
+          studentId,
+          filename: file.name,
+          contentType: file.type || null,
+          size: file.size,
+        }),
       });
       if (!signRes.ok) throw new Error('Could not start the upload.');
-      const { signedUrl } = await signRes.json();
+      const { signedUrl, creationId } = await signRes.json();
 
       const putRes = await fetch(signedUrl, {
         method: 'PUT',
@@ -207,6 +227,15 @@ export default function ProjectUploads({
             : `Storage refused the file (${putRes.status}).`,
         );
       }
+
+      // Only now does the row count as uploaded. Until this lands it reads as
+      // an abandoned attempt, which is exactly what it would be if the browser
+      // closed between the PUT and here.
+      await fetch('/api/v1/uploads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creationId }),
+      });
 
       await refresh();
     } catch (err) {
@@ -249,7 +278,7 @@ export default function ProjectUploads({
 
           <m.button
             type="button"
-            disabled={busy}
+            disabled={busy || studentId === null}
             onClick={() => inputRef.current?.click()}
             whileTap={{ scale: 0.98, transition: spring }}
             className={`inline-flex items-center gap-2 rounded-[10px] border px-[13px] py-[8px] text-[12px] font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 ${t.button}`}
@@ -325,14 +354,14 @@ export default function ProjectUploads({
                   href={f.signedUrl ?? '#'}
                   target="_blank"
                   rel="noreferrer"
-                  title={f.path}
+                  title={f.name}
                   {...liftCard}
                   className={`flex h-full flex-col rounded-[10px] border p-1.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${t.tile}`}
                 >
                   <Thumb file={f} kind={kind} tone={tone} />
 
                   <span className={`mt-1.5 block truncate text-[10.5px] font-medium ${t.name}`}>
-                    {f.path}
+                    {f.name}
                   </span>
                   <span className={`mt-0.5 flex items-center gap-1 truncate whitespace-nowrap text-[9.5px] ${t.meta}`}>
                     <Icon name={kind.icon} size={10} aria-hidden="true" />

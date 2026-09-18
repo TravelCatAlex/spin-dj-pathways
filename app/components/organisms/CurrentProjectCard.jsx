@@ -38,6 +38,7 @@ export default function CurrentProjectCard({
   onViewDetails,
   onPlay,
   onViewAllUploads = null,
+  studentId = null,
 }) {
   const stage = project.stages[project.currentStageIndex];
 
@@ -158,6 +159,7 @@ export default function CurrentProjectCard({
           22px - which read as a broken component rather than a design choice. */}
       <div className="border-t border-white/[0.07] bg-[#1e0767] px-[22px] pb-[18px] pt-[14px] max-[760px]:px-4">
         <ProjectUploads
+          studentId={studentId}
           limit={5}
           tone="dark"
           title="Recordings"
