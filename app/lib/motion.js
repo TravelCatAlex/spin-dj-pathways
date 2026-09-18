@@ -107,11 +107,6 @@ export const liftCard = {
 };
 
 /** The same idea at chip scale, where a 4px lift would be too much. */
-export const liftChip = {
-  whileHover: { y: -2, transition: spring },
-  whileTap: { scale: 0.97, transition: springFast },
-};
-
 /**
  * The stage callout: a wide, low panel, so it lifts less than a card would —
  * a 4px rise on something this broad reads as the whole band detaching.
@@ -123,15 +118,6 @@ export const liftChip = {
  * than the whole chip moving. It also resamples the text every frame, which
  * softens it. A rigid lift keeps the panel one object and the type crisp.
  */
-export const liftPanel = {
-  whileHover: 'hover',
-  whileTap: 'tap',
-  variants: {
-    hover: { y: -3, transition: spring },
-    tap: { y: -1, transition: springFast },
-  },
-};
-
 /** The callout's arrow, pulled along when the panel is hovered. */
 export const nudgeArrow = {
   hover: { x: 4, transition: spring },
@@ -222,10 +208,10 @@ export const journeyArrow = {
 };
 
 /**
- * The journey's vertical connector, used once the row collapses to a single
- * column and the horizontal arrows no longer apply. Grows from the top so it
- * reads as the route continuing downward, matching the way the horizontal
- * arrows stroke left to right.
+ * The journey's vertical connector, used once the column is too narrow
+ * for the row and the stages stack. Grows from the top so it reads as the
+ * route continuing downward, matching the way the horizontal arrows stroke
+ * left to right — the same top-to-bottom draw on load and on tab switch.
  */
 export const journeyRail = {
   hidden: { scaleY: 0, opacity: 0 },
@@ -236,6 +222,12 @@ export const journeyRail = {
   }),
 };
 
+/**
+ * The journey's vertical connector, used once the row collapses to a single
+ * column and the horizontal arrows no longer apply. Grows from the top so it
+ * reads as the route continuing downward, matching the way the horizontal
+ * arrows stroke left to right.
+ */
 /**
  * The role screen — the app's front door.
  *
@@ -393,10 +385,6 @@ export const HERO_TIMES = {
  * Slower than the house spring on purpose. This is the largest surface on the
  * page; at card speed a full-bleed image reads as lurching.
  */
-export const heroArt = {
-  hover: { scale: 1.02, transition: { ...springSlow, damping: 28 } },
-};
-
 /** The top bar's running order: greeting, its line, then the date. */
 export const TOPBAR_TIMES = { title: 0.02, subtitle: 0.1, date: 0.18 };
 

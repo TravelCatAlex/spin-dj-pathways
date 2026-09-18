@@ -1,23 +1,34 @@
 'use client';
 
 import { m } from 'motion/react';
-import { group } from '../../lib/motion';
 
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
 import Tag from '../atoms/Tag';
-import Icon from '../atoms/Icon';
+import { group } from '../../lib/motion';
 
 /**
  * ORGANISM — InterestsCard ("Things I'm Into")
- * The footer button is pushed down with mt-auto so the three cards in the
- * row land their buttons on one line however much content each holds.
+ *
+ * The edit action moved from a full-width button in the footer to a link in
+ * the header. Three cards sat in this row, each ending in its own purple
+ * button, and the row read as three calls to action competing with the one
+ * primary button on the page — "View Full Schedule" in Next Session. These
+ * are places to look, not things to do; the header link says so.
  */
 export default function InterestsCard({ interests, onEdit, onSelect }) {
-
   return (
-    <Card className="flex h-full flex-col" title="Things I'm Into" icon="heart">
-      <m.div className="mb-3.5 grid grid-cols-2 gap-[9px]" variants={group(0.04)}>
+    <Card
+      className="flex h-full flex-col"
+      title="Things I'm Into"
+      icon="heart"
+      action={
+        <Button variant="ghost" onClick={onEdit}>
+          Edit
+        </Button>
+      }
+    >
+      <m.div className="grid grid-cols-2 gap-[9px]" variants={group(0.04)}>
         {interests.map((interest) => (
           <Tag
             key={interest.id}
@@ -28,15 +39,6 @@ export default function InterestsCard({ interests, onEdit, onSelect }) {
           />
         ))}
       </m.div>
-      <Button className="group mt-auto" variant="outline" block onClick={onEdit}>
-        Edit My Interests
-        {/* The pencil tips back as if being picked up. Plain CSS: Button is
-            not a motion element, so nothing is writing an inline transform
-            that a class would lose to. */}
-        <span className="inline-flex transition-transform duration-200 ease-out group-hover:-rotate-[18deg] motion-reduce:transition-none">
-          <Icon name="edit" />
-        </span>
-      </Button>
     </Card>
   );
 }

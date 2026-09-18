@@ -1,4 +1,11 @@
 import {
+  FileType2 as FileTypePdf,
+  FileArchive,
+  Image as ImageIcon,
+  AudioLines,
+  Clock,
+  Hourglass,
+  Users2,
   Check,
   Scissors,
   ListChecks,
@@ -27,11 +34,14 @@ import {
   LogOut,
   MapPin,
   Mic,
+  MessageSquare,
   MoveRight,
   Music,
   Pencil,
   Play,
   Route,
+  Search,
+  Settings,
   Shield,
   SlidersHorizontal,
   Sparkles,
@@ -74,6 +84,17 @@ export const ICONS = {
   film: Clapperboard,
   play: Play,
   note: FileText,
+  // File kinds, for anything a student uploads. Named after WHAT THE FILE IS,
+  // not after the glyph - a caller asking for `pdf` still gets the right
+  // picture if the icon set is swapped, which is the whole point of this file.
+  pdf: FileTypePdf,
+  document: FileText,
+  image: ImageIcon,
+  audio: AudioLines,
+  archive: FileArchive,
+  clock: Clock,
+  duration: Hourglass,
+  seats: Users2,
   mixer: SlidersHorizontal,
   headphones: Headphones,
   music: Music,
@@ -95,6 +116,9 @@ export const ICONS = {
   // journey
   database: Database,
   brain: Brain,
+  search: Search,
+  settings: Settings,
+  flag: Flag,
 
   // interests
   superhero: Shield,
@@ -110,6 +134,9 @@ export const ICONS = {
   editing: Scissors,
   review: Eye,
   finished: Flag,
+
+  // messages
+  message: MessageSquare,
 
   // affordances
   edit: Pencil,
