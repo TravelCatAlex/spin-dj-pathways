@@ -17,6 +17,7 @@ import OpportunitiesSection from '../organisms/OpportunitiesSection';
 import JourneySection from '../organisms/JourneySection';
 import ProjectUploads from '../organisms/ProjectUploads';
 import ProfileCard from '../organisms/ProfileCard';
+import Skeleton from '../atoms/Skeleton';
 import CreationsSection from '../organisms/CreationsSection';
 
 import { useLiveDashboard } from '../../lib/live-data';
@@ -104,6 +105,7 @@ export default function StudentDashboardPage({ onLogout }) {
   return (
     <DashboardLayout
       user={live.user}
+      loading={live.loading}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onLogout={onLogout}
@@ -117,7 +119,7 @@ export default function StudentDashboardPage({ onLogout }) {
         {activeTab === 'home' ? (
           <>
             <Reveal inView delay={step(0)}>
-              <TopBar user={live.user} dateLabel={live.dateLabel} />
+              <TopBar user={live.user} dateLabel={live.dateLabel} loading={live.loading} />
             </Reveal>
 
             {/* Hidden entirely when there is nothing to put in it.
@@ -128,7 +130,29 @@ export default function StudentDashboardPage({ onLogout }) {
               * in this business are private appointments, which belong to no
               * class group at all. An empty bar reads as a component that
               * failed; no bar reads as a student with no class, which is true. */}
-            {live.chips.length > 0 ? (
+            {/* THE ROW THAT VANISHES, WHICH IS THE WORST KIND OF SWAP.
+                While the fetch is in flight `chips` is the fixture's three, so
+                the bar rendered "Podcasting / Sid Jacobson JCC / Podcasting
+                Group 1" and then - for a student with no class, which is most of
+                them - disappeared entirely, taking its height with it and
+                shifting the whole page up.
+
+                So during loading it holds its place with three blank chips, and
+                only once the answer is in does it either fill or go. */}
+            {live.loading ? (
+              <Reveal inView delay={step(1)}>
+                <div className="mb-[18px] flex flex-wrap items-center gap-2.5">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="relative block h-[42px] w-[190px] overflow-hidden rounded-[10px] max-[560px]:w-full"
+                    >
+                      <Skeleton tone="light" rounded="rounded-[10px]" />
+                    </span>
+                  ))}
+                </div>
+              </Reveal>
+            ) : live.chips.length > 0 ? (
               <Reveal inView delay={step(1)}>
                 <ContextRow
                   chips={live.chips}
@@ -148,7 +172,7 @@ export default function StudentDashboardPage({ onLogout }) {
                   studentId={live.isLive ? live.user.id : null}
                   onViewAllUploads={() => setActiveTab('creations')}
                 />
-              <NextSessionCard session={live.nextSession} />
+              <NextSessionCard session={live.nextSession} loading={live.loading} />
             </Reveal>
 
             {/* Interests | Progress | Feedback — where you are right now.
@@ -202,7 +226,11 @@ export default function StudentDashboardPage({ onLogout }) {
                 soon" panel over data that is already there is the one kind of
                 placeholder that actively misleads. */}
             <Reveal inView>
-              <ProfileCard user={live.user} totals={live.sessions?.totals ?? null} />
+              <ProfileCard
+                user={live.user}
+                totals={live.sessions?.totals ?? null}
+                loading={live.loading}
+              />
             </Reveal>
           </>
         ) : activeTab === 'creations' ? (

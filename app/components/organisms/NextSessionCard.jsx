@@ -5,6 +5,7 @@ import { m } from 'motion/react';
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
 import SessionDetail from '../molecules/SessionDetail';
+import Skeleton from '../atoms/Skeleton';
 import { group } from '../../lib/motion';
 
 /**
@@ -12,7 +13,7 @@ import { group } from '../../lib/motion';
  * Date with the start time as a pill, then label/value detail rows.
  * Fills the hero row's height: the list spreads, the button pins to the base.
  */
-export default function NextSessionCard({ session, onViewSchedule }) {
+export default function NextSessionCard({ session, onViewSchedule, loading = false }) {
   /* A student with nothing booked is a real state, and it arrived with real
    * data: the fixture always had a session, so this component read
    * `session.dateLabel` straight and threw the first time a live student had
@@ -21,6 +22,55 @@ export default function NextSessionCard({ session, onViewSchedule }) {
    * It says so rather than hiding the card. A card that disappears reads as a
    * page that failed to load; a card that says the schedule is empty reads as
    * the schedule being empty, which is the true thing. */
+  /* WHILE THE FETCH IS IN FLIGHT.
+   *
+   * Checked BEFORE the "no session" branch above would otherwise win: an
+   * in-flight request and a student with nothing booked are different facts,
+   * and "Your next session will appear here once it is scheduled" is a claim we
+   * cannot make until the answer is back.
+   *
+   * The card is built from the fixture until then, which meant a real date and a
+   * real teacher's name appeared and were then replaced by somebody else's -
+   * the reader had no way to tell which second was true. */
+  if (loading) {
+    return (
+      <Card className="flex flex-col" title="Next Session" icon="calendar">
+        <div className="mb-1.5 flex items-center justify-between gap-2.5">
+          <span className="relative block h-[19px] w-40 overflow-hidden rounded">
+            <Skeleton tone="light" rounded="rounded" />
+          </span>
+          <span className="relative block h-[22px] w-24 shrink-0 overflow-hidden rounded-full">
+            <Skeleton tone="light" rounded="rounded-full" />
+          </span>
+        </div>
+
+        <span className="relative mb-4 block h-[15px] w-3/4 overflow-hidden rounded">
+          <Skeleton tone="light" rounded="rounded" />
+        </span>
+
+        {/* Four rows, because four is what a session usually has. A count that
+            matches the common case keeps the card from resizing when the real
+            rows land. */}
+        <div className="mb-4 flex flex-1 flex-col justify-evenly gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between gap-4">
+              <span className="relative block h-[12px] w-20 overflow-hidden rounded">
+                <Skeleton tone="light" rounded="rounded" />
+              </span>
+              <span className="relative block h-[12px] w-32 overflow-hidden rounded">
+                <Skeleton tone="light" rounded="rounded" />
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <span className="relative mt-auto block h-[38px] w-full overflow-hidden rounded-[10px]">
+          <Skeleton tone="light" rounded="rounded-[10px]" />
+        </span>
+      </Card>
+    );
+  }
+
   if (!session) {
     return (
       <Card className="flex flex-col" title="Next Session" icon="calendar">

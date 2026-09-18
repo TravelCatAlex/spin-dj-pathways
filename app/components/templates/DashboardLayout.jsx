@@ -13,11 +13,13 @@ export default function DashboardLayout({
   onTabChange,
   onLogout,
   onProfileClick,
+  loading = false,
   children,
 }) {
   return (
     <div className="flex min-h-screen max-[760px]:flex-col">
       <Sidebar
+        loading={loading}
         user={user}
         activeTab={activeTab}
         onTabChange={onTabChange}
