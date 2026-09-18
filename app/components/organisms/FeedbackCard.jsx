@@ -5,8 +5,7 @@ import { m } from 'motion/react';
 import Card from '../molecules/Card';
 import Button from '../atoms/Button';
 import Avatar from '../atoms/Avatar';
-import Icon from '../atoms/Icon';
-import { rise, group, spring } from '../../lib/motion';
+import { group, rise, spring } from '../../lib/motion';
 
 /**
  * ORGANISM — FeedbackCard ("Coach's Feedback")
@@ -15,8 +14,11 @@ import { rise, group, spring } from '../../lib/motion';
  * The card is a quote, so it arrives like one: whoever said it lands first,
  * then what they said. Fading both together would have made the coach and the
  * praise read as one block of card furniture rather than a person speaking.
+ *
+ * "See All" moved to the header along with the other two cards in this row —
+ * see `InterestsCard` for why.
  */
-export default function FeedbackCard({ feedback, onViewAll }) {
+export default function FeedbackCard({ feedback, onSeeAll }) {
   const author = {
     ...rise,
     hover: { x: 2, transition: spring },
@@ -27,7 +29,16 @@ export default function FeedbackCard({ feedback, onViewAll }) {
   };
 
   return (
-    <Card className="flex h-full flex-col" title="Coach's Feedback" icon="star">
+    <Card
+      className="flex h-full flex-col"
+      title="Coach's Feedback"
+      icon="star"
+      action={
+        <Button variant="ghost" onClick={onSeeAll}>
+          See All
+        </Button>
+      }
+    >
       <m.div variants={group(0.09)}>
         <m.div
           className="mb-3 flex cursor-default items-center gap-[9px]"
@@ -44,21 +55,12 @@ export default function FeedbackCard({ feedback, onViewAll }) {
         </m.div>
 
         <m.blockquote
-          className="m-0 mb-[15px] text-[13px] leading-[1.6] text-ink"
+          className="m-0 text-[13px] leading-[1.6] text-ink"
           variants={rise}
         >
           &ldquo;{feedback.message}&rdquo;
         </m.blockquote>
       </m.div>
-
-      <Button className="group mt-auto" variant="outline" block onClick={onViewAll}>
-        View All Feedback
-        {/* The same nudge as My Progress and the stage callout — one gesture
-            for "go on then", wherever it appears. */}
-        <span className="inline-flex transition-transform duration-200 ease-out group-hover:translate-x-1 motion-reduce:transition-none">
-          <Icon name="arrowRight" size={14} />
-        </span>
-      </Button>
     </Card>
   );
 }
