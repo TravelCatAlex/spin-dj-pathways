@@ -68,8 +68,14 @@ export default function CurrentProjectCard({
             {project.description}
           </m.p>
 
-          {/* Lands last: it qualifies the project, so it reads as an answer to
-              the name rather than arriving alongside it. */}
+          {/* THE STATUS BADGE IS TURNED OFF, NOT DELETED - same reasoning as the
+              band below. `project.status` is a fixture, and no `project` table
+              exists to say what stage a student is at, so "Recording" was a
+              claim about work nobody had recorded.
+
+              Lands last when it is on: it qualifies the project, so it reads as
+              an answer to the name rather than arriving alongside it. */}
+          {false && (
           <m.span
             variants={delayedRise}
             custom={HERO_TIMES.badge}
@@ -85,6 +91,7 @@ export default function CurrentProjectCard({
             />
             {project.status}
           </m.span>
+          )}
         </div>
 
         <m.div
@@ -100,51 +107,70 @@ export default function CurrentProjectCard({
         </m.div>
       </div>
 
+      {/* ---------------------------------------------------------------------
+          THE LOWER BAND IS TURNED OFF, NOT DELETED.
+
+          Stage stepper, "current focus", "latest update" - all three are
+          fixtures with no table behind them. There is no `project` table, so
+          which stage a student is at and the last thing their coach said are
+          not facts this system holds, and a card that is half real and half
+          invented teaches the reader to trust neither half.
+
+          Kept because the markup is the hard part, and the day a `project`
+          table exists this is what fills it.
+
+          `{false && (...)}` rather than wrapping it in a comment: the block
+          carries its own JSX comments, and those cannot nest. This way the
+          markup still has to compile, so it cannot rot unnoticed while it is
+          switched off.
+          --------------------------------------------------------------------- */}
       {/* Lower band: progress, then the two notes about it. */}
-      <div className="grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1.05fr)] gap-6 border-t border-white/[0.07] bg-[#1e0767] px-[22px] pb-5 pt-[18px] max-[1180px]:grid-cols-1 max-[1180px]:gap-5 max-[760px]:px-4">
-        <div className="min-w-0">
-          <p className={EYEBROW}>Project Stage</p>
-          <Stepper steps={project.stages} currentIndex={project.currentStageIndex} />
-        </div>
+      {false && (
+        <div className="grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1.05fr)] gap-6 border-t border-white/[0.07] bg-[#1e0767] px-[22px] pb-5 pt-[18px] max-[1180px]:grid-cols-1 max-[1180px]:gap-5 max-[760px]:px-4">
+          <div className="min-w-0">
+            <p className={EYEBROW}>Project Stage</p>
+            <Stepper steps={project.stages} currentIndex={project.currentStageIndex} />
+          </div>
 
-        {/* Hairlines rather than a gap alone: three columns of small type run
-            together otherwise, and the middle note stops reading as its own
-            fact. They go once the band stacks. */}
-        <div className="min-w-0 border-l border-l-white/[0.09] pl-6 max-[1180px]:border-l-0 max-[1180px]:border-t max-[1180px]:border-t-white/[0.09] max-[1180px]:pl-0 max-[1180px]:pt-5">
-          <ProjectNote
-            label="Current Focus"
-            icon="target"
-            title={project.currentFocus.title}
-            detail={project.currentFocus.description}
-            delay={0.42}
-          />
-        </div>
+          {/* Hairlines rather than a gap alone: three columns of small type run
+              together otherwise, and the middle note stops reading as its own
+              fact. They go once the band stacks. */}
+          <div className="min-w-0 border-l border-l-white/[0.09] pl-6 max-[1180px]:border-l-0 max-[1180px]:border-t max-[1180px]:border-t-white/[0.09] max-[1180px]:pl-0 max-[1180px]:pt-5">
+            <ProjectNote
+              label="Current Focus"
+              icon="target"
+              title={project.currentFocus.title}
+              detail={project.currentFocus.description}
+              delay={0.42}
+            />
+          </div>
 
-        <div className="flex min-w-0 flex-col justify-between gap-3 border-l border-l-white/[0.09] pl-6 max-[1180px]:border-l-0 max-[1180px]:border-t max-[1180px]:border-t-white/[0.09] max-[1180px]:pl-0 max-[1180px]:pt-5">
-          <ProjectNote
-            label="Latest Update"
-            icon="message"
-            title={project.latestUpdate.message}
-            detail={project.latestUpdate.date}
-            delay={0.5}
-          />
+          <div className="flex min-w-0 flex-col justify-between gap-3 border-l border-l-white/[0.09] pl-6 max-[1180px]:border-l-0 max-[1180px]:border-t max-[1180px]:border-t-white/[0.09] max-[1180px]:pl-0 max-[1180px]:pt-5">
+            <ProjectNote
+              label="Latest Update"
+              icon="message"
+              title={project.latestUpdate.message}
+              detail={project.latestUpdate.date}
+              delay={0.5}
+            />
 
-          <m.button
-            type="button"
-            onClick={onViewDetails}
-            whileHover="hover"
-            whileTap={{ scale: 0.98, transition: spring }}
-            aria-label={`View details for ${project.title} — currently ${stage?.label}`}
-            className="group inline-flex w-full items-center justify-center gap-2 self-end rounded-[10px] border border-white/20 bg-white/[0.12] px-[15px] py-[9px] text-[12.5px] font-semibold text-white transition-colors duration-150 ease-out hover:border-white/35 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            View Project Details
-            {/* The same nudge the rest of the page uses for "go on then". */}
-            <m.span variants={nudgeArrow} aria-hidden="true" className="inline-flex">
-              <Icon name="arrowRight" size={14} />
-            </m.span>
-          </m.button>
+            <m.button
+              type="button"
+              onClick={onViewDetails}
+              whileHover="hover"
+              whileTap={{ scale: 0.98, transition: spring }}
+              aria-label={`View details for ${project.title} — currently ${stage?.label}`}
+              className="group inline-flex w-full items-center justify-center gap-2 self-end rounded-[10px] border border-white/20 bg-white/[0.12] px-[15px] py-[9px] text-[12.5px] font-semibold text-white transition-colors duration-150 ease-out hover:border-white/35 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              View Project Details
+              {/* The same nudge the rest of the page uses for "go on then". */}
+              <m.span variants={nudgeArrow} aria-hidden="true" className="inline-flex">
+                <Icon name="arrowRight" size={14} />
+              </m.span>
+            </m.button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* A band of its own rather than a fourth column in the row above. Those
           three are notes ABOUT the project and read as a set; this one is a
@@ -157,12 +183,16 @@ export default function CurrentProjectCard({
           this strip as a bare child of the card, outside the padded rows, and it
           sat flush against the left edge while everything above it was inset by
           22px - which read as a broken component rather than a design choice. */}
+      {/* "Files", not "Recordings". The strip started out holding audio and now
+          carries images, documents and anything else the bucket accepts - a
+          label narrower than its contents makes a reader wonder whether the
+          other things are in the wrong place. */}
       <div className="border-t border-white/[0.07] bg-[#1e0767] px-[22px] pb-[18px] pt-[14px] max-[760px]:px-4">
         <ProjectUploads
           studentId={studentId}
           limit={5}
           tone="dark"
-          title="Recordings"
+          title="Files"
           onViewAll={onViewAllUploads}
           showRule={false}
         />
