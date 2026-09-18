@@ -22,7 +22,18 @@ export default function TopBar({ user, dateLabel }) {
           custom={TOPBAR_TIMES.title}
           className="m-0 mb-[3px] text-[25px] font-extrabold tracking-[-0.5px]"
         >
-          Welcome back, {user.firstName}!
+          Welcome back, {user.firstName}!{' '}
+          {/* The one emoji on the page. Decorative, so it is hidden from
+              screen readers — "Welcome back, Avery! waving hand" is noise,
+              and the greeting already says everything the glyph does. */}
+          <m.span
+            aria-hidden="true"
+            className="inline-block origin-[70%_80%]"
+            animate={{ rotate: [0, 14, -8, 12, 0] }}
+            transition={{ duration: 1.6, delay: 0.6, ease: 'easeInOut' }}
+          >
+            👋
+          </m.span>
         </m.h1>
         <m.p
           variants={delayedRise}

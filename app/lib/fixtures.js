@@ -60,13 +60,13 @@ export const LOGO = {
   height: 782,
 };
 
-/** Hero artwork for the Creator Pathway card. */
-export const PATHWAY_BANNER = {
-  src: '/images/pathway-banner.webp',
-  width: 2400,
-  height: 400,
-};
-
+/**
+ * The pathway the student is on.
+ *
+ * No longer rendered on Home — the hero there is the project, not the
+ * pathway. Kept because it is still the My Pathway tab's subject and the
+ * `GET /students/me/pathway` contract is unchanged.
+ */
 export const CURRENT_PATHWAY = {
   id: 'pw-creator',
   title: 'Creator Pathway',
@@ -75,10 +75,23 @@ export const CURRENT_PATHWAY = {
   description: "You're learning, creating and sharing your voice with the world.",
 };
 
+/**
+ * The hero's subject: what the student is making right now.
+ *
+ * `currentFocus` and `latestUpdate` are separate facts and get separate
+ * columns. Focus is forward-looking — what this stage is for — while the
+ * update is the last thing that actually happened. The card used to collapse
+ * both into one "next step" line, which lost the difference between a plan
+ * and a record.
+ */
 export const CURRENT_PROJECT = {
   id: 'proj-1',
   title: 'My First Vlog',
   icon: 'film',
+  description: 'A personal video where I introduce myself and share what I love.',
+  /** Matches the label of the stage at `currentStageIndex`. */
+  status: 'Recording',
+  thumbnailUrl: '/images/creation-intro-video.webp',
   stages: [
     { id: 'idea', label: 'Idea', icon: 'idea' },
     { id: 'planning', label: 'Planning', icon: 'plan' },
@@ -88,11 +101,24 @@ export const CURRENT_PROJECT = {
     { id: 'finished', label: 'Finished', icon: 'finished' },
   ],
   currentStageIndex: 2,
-  nextAction: 'Record your intro segment',
+  currentFocus: {
+    title: 'Recording the intro segment',
+    description:
+      'Avery and Coach Jordan are working on recording the introduction.',
+  },
+  latestUpdate: {
+    message: 'Practiced the introduction with Coach Jordan.',
+    date: 'May 24, 2026',
+  },
 };
 
 export const NEXT_SESSION = {
   id: 'sess-1',
+  // Same SHAPE as the live payload, not just the same fields the card happened
+  // to use. Without a title here the mock rendered no title line and the real
+  // one did, so the card jumped the moment the fetch landed - the fixture has to
+  // be the right shape or it teaches the layout the wrong one.
+  title: 'Podcasting Group 1 | Recording Session | 60 Minutes',
   dateLabel: 'Tue, May 27, 2026',
   timeLabel: '4:30 PM',
   durationMinutes: 60,
@@ -182,6 +208,11 @@ export const LATEST_FEEDBACK = {
     "Avery is doing an awesome job! You're getting more comfortable behind the mic and your ideas are getting stronger every week.",
 };
 
+/**
+ * Finished and in-flight work. Lives on the My Creations tab rather than
+ * Home: the dashboard answers "what happens next", and a portfolio is a
+ * different question from "what am I making right now".
+ */
 export const CREATIONS = [
   {
     id: 'cr-1',
@@ -215,96 +246,107 @@ export const CREATIONS = [
   },
 ];
 
+/**
+ * What the student could make next, drawn from their interests — the WWE and
+ * superhero suggestions are the WWE and Marvel tags in "Things I'm Into"
+ * turned into something to do.
+ *
+ * Same row shape as OPPORTUNITIES on purpose: both cards offer a thing to say
+ * yes to, so both render through `LinkRow` and read as one idea in two
+ * columns rather than two unrelated lists.
+ */
+export const NEXT_PROJECTS = [
+  {
+    id: 'np-1',
+    title: 'WWE Commentary Podcast',
+    description: 'Talk about your favorite matches',
+    icon: 'trophy',
+    accent: '#10b981',
+  },
+  {
+    id: 'np-2',
+    title: 'Superhero Movie Review',
+    description: 'Pick a movie and share what you think',
+    icon: 'superhero',
+    accent: '#ef4444',
+  },
+  {
+    id: 'np-3',
+    title: 'Interview a Friend',
+    description: 'Ask someone about their favorite music, movie or sport',
+    icon: 'users',
+    accent: '#f59e0b',
+  },
+];
+
+/**
+ * Ways to take part beyond your own project.
+ *
+ * Purple, cyan, blue — cool hues, so the card reads as one family and sits
+ * clear of the warm greens and ambers in Possible Next Projects beside it.
+ */
 export const OPPORTUNITIES = [
   {
     id: 'op-1',
-    title: 'Spin DJ Live - Summer Show',
-    icon: 'headphones',
-    when: 'Jun 14, 2026 - 2:00 PM',
-    // Blue, the same one the pathway journey uses for Supabase. With green,
-    // amber and pink on the rows below it, blue is the one hue that sits well
-    // clear of all three — and unlike purple it is not carrying any interface
-    // meaning elsewhere, so it reads as this row's colour rather than chrome.
-    accent: '#3b82f6',
-    cta: "I'm Interested",
+    title: 'Podcast Interviewer',
+    description: 'Help interview guests at a Spin event',
+    icon: 'mic',
+    accent: '#7c3aed',
   },
   {
     id: 'op-2',
     title: 'Camera Operator',
+    description: 'Work behind the camera at a live show',
     icon: 'video',
-    when: 'Jun 14, 2026 - 2:00 PM',
-    accent: '#10b981',
-    cta: 'View',
+    accent: '#06b6d4',
   },
   {
     id: 'op-3',
-    title: 'Podcast Interviewer',
-    icon: 'mic',
-    when: 'Jun 14, 2026 - 2:00 PM',
-    accent: '#f59e0b',
-    cta: "I'm Interested",
-  },
-  {
-    id: 'op-4',
     title: 'Event Check-In Team',
-    icon: 'star',
-    when: 'Jun 14, 2026 - 2:00 PM',
-    // Pink, not the purple op-1 already uses — four rows should read as four
-    // things. Taken from the pathway journey's palette so the page keeps one
-    // set of accents rather than inventing a new one here.
-    accent: '#ec4899',
-    cta: 'View',
+    description: 'Help welcome guests and support the event',
+    icon: 'users',
+    accent: '#3b82f6',
   },
 ];
 
+/**
+ * The journey as the student experiences it.
+ *
+ * Four stages, not the seven the pipeline actually has. The old set named the
+ * machinery — Intake, Supabase, Rules Recommendation, Teacher Review — which
+ * describes how the product works, not what the student does. Supabase
+ * storing a row is not a stage of anyone's creative journey.
+ */
 export const PATHWAY_JOURNEY = [
   {
     id: 'j-1',
-    title: 'Intake',
-    description: 'Your interests and goals',
-    icon: 'user',
+    title: 'Discover',
+    description: 'Explore your interests',
+    icon: 'search',
     accent: '#7c3aed',
   },
   {
     id: 'j-2',
-    title: 'Supabase',
-    description: 'Securely stores your data',
-    icon: 'database',
+    title: 'Create',
+    description: 'Make and learn',
+    icon: 'settings',
     accent: '#3b82f6',
   },
   {
     id: 'j-3',
-    title: 'Rules Recommendation',
-    description: 'AI + Rules recommend your pathway',
-    icon: 'brain',
-    accent: '#14b8a6',
-  },
-  {
-    id: 'j-4',
-    title: 'Teacher Review',
-    description: 'Coach reviews and personalizes',
-    icon: 'teacher',
-    accent: '#f59e0b',
-  },
-  {
-    id: 'j-5',
-    title: 'Your Pathway',
-    description: 'Personalized learning just for you',
-    icon: 'pathway',
-    accent: '#8b5cf6',
-  },
-  {
-    id: 'j-6',
-    title: 'Projects & Progress',
-    description: 'Create, learn and grow',
-    icon: 'chart',
+    title: 'Share',
+    description: 'Show your work with others',
+    icon: 'users',
     accent: '#ec4899',
   },
   {
-    id: 'j-7',
-    title: 'Artifacts & Achievements',
-    description: 'Show your progress to the world',
-    icon: 'trophy',
+    id: 'j-4',
+    title: 'Grow',
+    description: 'Build new skills and opportunities',
+    icon: 'chart',
     accent: '#10b981',
   },
 ];
+
+/** The closing line under the journey row. */
+export const JOURNEY_NOTE = "You're on an amazing journey — keep creating!";
