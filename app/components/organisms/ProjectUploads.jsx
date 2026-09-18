@@ -12,7 +12,7 @@ import { group, liftCard, rise, spring } from '../../lib/motion';
  * ORGANISM — ProjectUploads
  *
  * Files a student has uploaded. Two places, one component:
- *   tone="dark"  — the recordings strip at the foot of the hero, five at a time
+ *   tone="dark"  — the files strip at the foot of the hero, five at a time
  *   tone="light" — the My Creations tab, the whole lot
  *
  * ONE COMPONENT BECAUSE THE TILE IS THE SAME TILE. The alternative was a strip
@@ -163,7 +163,7 @@ export default function ProjectUploads({
   studentId = null,
   limit = 5,
   tone = 'dark',
-  title = 'Recordings',
+  title = 'Files',
   onViewAll = null,
   showRule = true,
 }) {
