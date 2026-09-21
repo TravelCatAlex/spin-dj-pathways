@@ -62,6 +62,17 @@ const DEFAULT_LIST_LIMIT = 5;
 const MAX_LIST_LIMIT = 50;
 
 /**
+ * How long a deleted file stays recoverable.
+ *
+ * The same number lives in the sync service's purge, and the two MUST agree: if
+ * this is longer, the portal offers a restore for files whose bytes are already
+ * gone. It is repeated rather than shared because the two are separate
+ * deployments with no common package - so it is written down in both, with this
+ * note, rather than quietly assumed.
+ */
+const RETENTION_DAYS = 30;
+
+/**
  * Pulls a safe extension off the caller's filename.
  *
  * Only the extension, and only when short and alphanumeric — so `../../etc/passwd`
@@ -170,20 +181,27 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 /**
  * PATCH /api/v1/uploads
- * Body: { creationId }
+ * Body: { creationId, action?: 'confirm' | 'restore' }
  *
- * The browser says the file landed. Until this runs the row reads as an
- * abandoned attempt, which is what makes an abandoned attempt visible at all.
+ * `confirm` (the default) is the browser saying the file landed. Until it runs
+ * the row reads as an abandoned attempt, which is what makes an abandoned
+ * attempt visible at all.
+ *
+ * `restore` clears `deleted_at`, which is the whole point of the soft delete.
+ * It is scoped to rows that are still inside the window: a row whose 30 days
+ * have passed may have had its bytes removed already, and clearing the flag
+ * would put a file back in the listing that cannot be opened.
  */
 export async function PATCH(request: Request): Promise<NextResponse> {
-  let body: { creationId?: unknown } = {};
+  let body: { creationId?: unknown; action?: unknown } = {};
   try {
-    body = (await request.json()) as { creationId?: unknown };
+    body = (await request.json()) as { creationId?: unknown; action?: unknown };
   } catch {
     /* handled by the check below */
   }
 
   const creationId = asText(body.creationId);
+  const action = asText(body.action) ?? 'confirm';
   if (creationId === null) {
     return NextResponse.json(
       { error: { code: 'creation_required', message: 'creationId is required.' } },
@@ -192,7 +210,42 @@ export async function PATCH(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const { error } = await serverSupabase()
+    const db = serverSupabase();
+
+    if (action === 'restore') {
+      const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();
+      const { data, error } = await db
+        .from('creation')
+        .update({ deleted_at: null })
+        .eq('id', creationId)
+        // Inside the window only. Past it the bytes may already be gone, and
+        // restoring the row would put a file back in the listing that opens to
+        // nothing - a worse outcome than saying it is too late.
+        .gte('deleted_at', cutoff)
+        .select('id');
+
+      if (error !== null) {
+        console.error('creation restore failed', error);
+        return NextResponse.json(
+          { error: { code: 'restore_failed', message: 'Could not restore the file.' } },
+          { status: 502 },
+        );
+      }
+      if ((data ?? []).length === 0) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'not_restorable',
+              message: 'That file is not in the recovery window.',
+            },
+          },
+          { status: 404 },
+        );
+      }
+      return NextResponse.json({ ok: true, restored: creationId });
+    }
+
+    const { error } = await db
       .from('creation')
       .update({ uploaded_at: new Date().toISOString() })
       .eq('id', creationId);
@@ -221,6 +274,8 @@ interface ListedFile {
   size: number | null;
   contentType: string | null;
   createdAt: string | null;
+  deletedAt: string | null;
+  recoverableUntil: string | null;
   signedUrl: string | null;
 }
 
@@ -231,6 +286,7 @@ interface CreationRow {
   content_type: string | null;
   size_bytes: number | null;
   uploaded_at: string | null;
+  deleted_at: string | null;
 }
 
 /**
@@ -254,6 +310,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
+    const deletedOnly = params.get('deleted') === 'true';
     const asked = Number.parseInt(params.get('limit') ?? '', 10);
     const limit = Number.isFinite(asked)
       ? Math.min(Math.max(asked, 1), MAX_LIST_LIMIT)
@@ -264,13 +321,17 @@ export async function GET(request: Request): Promise<NextResponse> {
 
       const { data, error } = await db
         .from('creation')
-        .select('id, storage_path, original_filename, content_type, size_bytes, uploaded_at')
+        .select('id, storage_path, original_filename, content_type, size_bytes, uploaded_at, deleted_at')
         .eq('student_id', studentId)
         // Only files that actually landed. A row still waiting on its PATCH is
         // an upload in flight or one that was abandoned, and neither is
         // something to show a student as their work.
         .not('uploaded_at', 'is', null)
-        .order('uploaded_at', { ascending: false })
+        // `?deleted=true` is the recycle bin: what they removed and can still
+        // get back. Anything else - including the parameter being absent - is
+        // the live listing, so a typo shows live files rather than deleted ones.
+        .filter('deleted_at', deletedOnly ? 'not.is' : 'is', null)
+        .order(deletedOnly ? 'deleted_at' : 'uploaded_at', { ascending: false })
         .limit(limit);
 
       if (error !== null) {
@@ -317,6 +378,13 @@ export async function GET(request: Request): Promise<NextResponse> {
         size: r.size_bytes,
         contentType: r.content_type,
         createdAt: r.uploaded_at,
+        deletedAt: r.deleted_at,
+        // Counting down in the UI is friendlier than a date, and the maths
+        // belongs here where RETENTION_DAYS is.
+        recoverableUntil:
+          r.deleted_at === null
+            ? null
+            : new Date(Date.parse(r.deleted_at) + RETENTION_DAYS * 86_400_000).toISOString(),
         signedUrl: urlByPath.get(r.storage_path) ?? null,
       }));
 
@@ -373,29 +441,22 @@ export async function GET(request: Request): Promise<NextResponse> {
  * DELETE /api/v1/uploads
  * Body: { creationId, studentId }
  *
- * Removes the object from storage AND the row that records it.
+ * SOFT. Sets `deleted_at`; the storage object is not touched.
  *
- * STORAGE FIRST, THEN THE ROW, and the order is the whole design here.
+ * The file disappears from the student's listing and stays recoverable for 30
+ * days. `creation:purge` in the sync service removes the object and the row once
+ * that window closes, and only then is it irreversible - which is why the purge
+ * lives where the schedules and the alerting already are, rather than here where
+ * nothing is scheduled.
  *
- *   row first  -> if the storage call then fails, the object survives with
- *                 nothing pointing at it. The student sees their file gone, so
- *                 nobody ever looks for it again, and it sits in the bucket
- *                 costing money for ever. An orphan nothing can even count.
+ * This route used to hard-delete, storage first and then the row, and the
+ * ordering mattered because the two systems share no transaction. Soft deleting
+ * removes that problem entirely: one column, one system, nothing to half-finish.
  *
- *   storage first -> if the row delete then fails, the row points at an object
- *                 that is no longer there. That is visible: the tile is still
- *                 listed and its signed URL 404s. Ugly, and FIXABLE by pressing
- *                 delete again, because removing an already-absent object
- *                 succeeds.
- *
- * So the failure that can be retried is the one we choose to risk. Neither
- * order is atomic - Storage and Postgres do not share a transaction - and
- * pretending otherwise would be the real mistake.
- *
- * SCOPED BY studentId, which today is WEAK and still worth doing. With no auth
- * a caller can claim any id, so this stops a wrong id rather than a determined
- * one. It costs nothing and it means the query is already the right shape when
- * the id stops being something the caller supplies.
+ * SCOPED BY studentId, which today is WEAK and still worth doing. With no auth a
+ * caller can claim any id, so it stops a wrong id rather than a determined one.
+ * It costs nothing, and the query is already the right shape for the day the id
+ * stops being something the caller supplies.
  */
 export async function DELETE(request: Request): Promise<NextResponse> {
   let body: { creationId?: unknown; studentId?: unknown } = {};
@@ -449,36 +510,31 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       );
     }
 
-    const { error: storageError } = await db.storage
-      .from(bucketName())
-      .remove([row.storage_path as string]);
+    // SOFT. One column, and the bytes are not touched.
+    //
+    // Deleting a student's own recording is the one action here that cannot be
+    // taken back, and a confirmation dialog is not enough protection for
+    // something that final - people confirm dialogs. So this hides the file and
+    // starts a 30-day clock; `creation:purge` in the sync service is what makes
+    // it permanent, and only after the window.
+    //
+    // The object is NOT moved to a `trash/` prefix either. That rewrites
+    // `storage_path`, the one value tying the row to its bytes, and a move that
+    // half-fails leaves the row pointing at neither place.
+    const { error: markError } = await db
+      .from('creation')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', creationId);
 
-    if (storageError !== null) {
-      // Stop here. Removing the row now would leave the object orphaned with
-      // nothing able to find it again.
-      console.error('storage remove failed', storageError);
+    if (markError !== null) {
+      console.error('creation soft delete failed', markError);
       return NextResponse.json(
         { error: { code: 'delete_failed', message: 'Could not delete the file.' } },
         { status: 502 },
       );
     }
 
-    const { error: rowError } = await db.from('creation').delete().eq('id', creationId);
-
-    if (rowError !== null) {
-      console.error('creation delete failed', rowError);
-      return NextResponse.json(
-        {
-          error: {
-            code: 'partly_deleted',
-            message: 'The file is gone but its record remains. Try again.',
-          },
-        },
-        { status: 502 },
-      );
-    }
-
-    return NextResponse.json({ ok: true, id: creationId });
+    return NextResponse.json({ ok: true, id: creationId, recoverableForDays: 30 });
   } catch (err) {
     console.error('delete route failed', err);
     return NextResponse.json(

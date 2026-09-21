@@ -2,15 +2,33 @@
 
 ```
 app/
-├─ lib/fixtures.js          ← the ONLY data source (swap for APIs; see REQUIRED_APIS.md)
+├─ layout.tsx               ← html/body, fonts, <Providers>
+├─ providers.jsx            ← LazyMotion(domMax) for the whole app
+├─ page.tsx                 ← redirect → /login
+├─ login/                   ← the role gate (a picker, NOT authentication)
+├─ student/                 ← layout.jsx = sidebar + one dashboard fetch
+│  └─ page + projects|creations|pathway|events|profile
+├─ teacher/, organization/  ← coming soon
+├─ lib/fixtures.js          ← the ONLY fixture source (see REQUIRED_APIS.md)
+├─ lib/live-context.jsx     ← one useLiveDashboard() for the student section
 ├─ globals.css              ← design tokens + all component classes
 └─ components/
    ├─ atoms/                ← indivisible UI primitives, no business meaning
    ├─ molecules/            ← small groups of atoms that form one unit
    ├─ organisms/            ← full dashboard sections
    ├─ templates/            ← page skeletons, no data
-   └─ pages/                ← templates + real (currently fixture) data
+   └─ pages/                ← screens shared by more than one route
 ```
+
+## Routing
+
+Every screen has an address. Tabs were `useState` in one page until then, so a
+refresh threw you back to the role gate, nothing could be linked to and the
+back button did nothing.
+
+`Sidebar` still speaks in the tab ids from `NAV_ITEMS` — `app/student/layout.jsx`
+owns the tab→path table and derives the active tab from `usePathname()`. That
+is what kept Sidebar, NavItem and the mobile drawer untouched by the move.
 
 ## Atoms
 
@@ -51,9 +69,11 @@ app/
 ## Templates & Pages
 
 - `templates/DashboardLayout` — sidebar + main column, data-free.
-- `pages/StudentDashboardPage` — imports fixtures, passes props to organisms,
-  owns the active-tab state. This is the only file that touches `lib/fixtures.js`
-  apart from `Sidebar` (nav config).
+- `pages/RoleComingSoonPage` — the teacher and organization placeholder, one
+  component for both so the two cannot drift.
+- Route files under `app/student/` are the pages: they read fixtures and
+  `useLive()`, and pass props to organisms. Together with `Sidebar` (nav
+  config) they are the only files that touch `lib/fixtures.js`.
 
 ## Rules
 

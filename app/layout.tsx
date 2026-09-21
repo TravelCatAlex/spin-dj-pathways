@@ -1,5 +1,6 @@
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import Providers from './providers'
 
 // Self-hosted at build time by next/font — no runtime CDN request, no FOUT.
 const jakarta = Plus_Jakarta_Sans({
@@ -30,7 +31,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }

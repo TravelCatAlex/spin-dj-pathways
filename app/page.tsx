@@ -1,6 +1,9 @@
-'use client';
-import SpinDJDashboard from './components/SpinDJDashboard';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  return <SpinDJDashboard />;
+/**
+ * The app has no home of its own — routing starts at the role gate, the same
+ * screen that used to be the initial state of the single page this app was.
+ */
+export default function RootPage() {
+  redirect('/login');
 }

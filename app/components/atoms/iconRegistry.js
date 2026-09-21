@@ -1,5 +1,6 @@
 import {
   Trash2,
+  RotateCcw,
   AlertTriangle,
   FileType2 as FileTypePdf,
   FileArchive,
@@ -98,6 +99,10 @@ export const ICONS = {
   duration: Hourglass,
   seats: Users2,
   trash: Trash2,
+  // Undo, not a right-arrow: restoring a deleted file puts it back where it
+  // was, and an arrow pointing forward reads as 'open' on a tile that is
+  // already a link.
+  restore: RotateCcw,
   warning: AlertTriangle,
   mixer: SlidersHorizontal,
   headphones: Headphones,
