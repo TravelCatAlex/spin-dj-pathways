@@ -53,6 +53,8 @@ const TONES = {
     skeleton: 'dark',
     deleteButton:
       'border-white/20 bg-black/40 text-white hover:border-rose-300/60 hover:bg-rose-500/30 focus-visible:outline-white',
+    restoreButton:
+      'border-white/20 bg-black/40 text-white hover:border-emerald-300/60 hover:bg-emerald-500/30 focus-visible:outline-white',
   },
   light: {
     eyebrow: `${EYEBROW} text-ink/60`,
@@ -67,6 +69,8 @@ const TONES = {
     skeleton: 'light',
     deleteButton:
       'border-black/10 bg-white/90 text-ink hover:border-rose-400/60 hover:bg-rose-50 focus-visible:outline-ink',
+    restoreButton:
+      'border-black/10 bg-white/90 text-ink hover:border-emerald-500/60 hover:bg-emerald-50 focus-visible:outline-ink',
   },
 };
 
@@ -96,6 +100,30 @@ function fileKind(file) {
     return { icon: 'archive', label: 'Archive', isImage: false };
 
   return { icon: 'note', label: 'File', isImage: false };
+}
+
+/**
+ * How long is left to change your mind, as a person would say it.
+ *
+ * The API sends `recoverableUntil` as a date, and the maths is already done
+ * there — RETENTION_DAYS lives beside the query that reads it. This only
+ * chooses the words. Rounding UP, so a file with four hours left reads "1 day
+ * left" rather than "0 days left", which sounds like it is already gone.
+ *
+ * Past the window it says so instead of counting backwards: the purge runs
+ * daily, so a row can outlive its window by up to a day and must not offer a
+ * restore the API will refuse.
+ */
+function recoveryLabel(recoverableUntil) {
+  if (typeof recoverableUntil !== 'string') return null;
+  const until = Date.parse(recoverableUntil);
+  if (Number.isNaN(until)) return null;
+
+  const msLeft = until - Date.now();
+  if (msLeft <= 0) return 'Window closed';
+
+  const days = Math.ceil(msLeft / 86_400_000);
+  return days === 1 ? '1 day left' : `${days} days left`;
 }
 
 /** Bytes as something a person reads. Null stays null — "unknown" is not "0 B". */
@@ -170,6 +198,33 @@ export default function ProjectUploads({
   title = 'Files',
   onViewAll = null,
   showRule = true,
+  /**
+   * Classes for the section itself — the card the My Creations page puts each
+   * list in. It is a prop rather than a wrapper in the page because a list
+   * that hides itself (`hideWhenEmpty`) must take its card with it; a wrapper
+   * outside this component would stay behind as an empty panel.
+   */
+  className = '',
+  /**
+   * THE RECYCLE BIN. `deleted` lists what this student removed and is still
+   * inside the 30-day window, and swaps the delete control for a restore.
+   *
+   * A prop on this component rather than a second one: the tile, the
+   * thumbnail, the icons and the empty state are identical, and the two views
+   * differ only in which rows the API returns and what the corner button does.
+   * A separate BinUploads would have been the same file with two lines changed
+   * and would drift the first time a file type is added to one of them.
+   */
+  deleted = false,
+  /** A bin with nothing in it is not news — the section hides instead. */
+  hideWhenEmpty = false,
+  /**
+   * Bumped by the parent to force a re-read. Deleting in the live list has to
+   * refill the bin beside it, and neither list can see the other.
+   */
+  reloadKey = 0,
+  /** Fired after a delete or a restore, so the parent can bump `reloadKey`. */
+  onChanged = null,
 }) {
   const t = TONES[tone] ?? TONES.dark;
 
@@ -180,13 +235,17 @@ export default function ProjectUploads({
   // The file awaiting confirmation. Null when the dialog is closed.
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  // The id being restored, not a boolean: the bin restores one tile at a time
+  // and only that tile should show it.
+  const [restoringId, setRestoringId] = useState(null);
   const inputRef = useRef(null);
 
   const refresh = useCallback(async () => {
     if (studentId === null) return;
     try {
       const res = await fetch(
-        `/api/v1/uploads?studentId=${encodeURIComponent(studentId)}&limit=${limit}`,
+        `/api/v1/uploads?studentId=${encodeURIComponent(studentId)}&limit=${limit}` +
+          (deleted ? '&deleted=true' : ''),
         { cache: 'no-store' },
       );
       if (!res.ok) throw new Error(`list failed: ${res.status}`);
@@ -197,7 +256,9 @@ export default function ProjectUploads({
       console.error(err);
       setState('failed');
     }
-  }, [studentId, limit]);
+    // reloadKey is not read in the body — it is here so the parent can force
+    // this list to re-run after the OTHER list changed something.
+  }, [studentId, limit, deleted, reloadKey]);
 
   useEffect(() => {
     void refresh();
@@ -271,6 +332,7 @@ export default function ProjectUploads({
       }
       setPendingDelete(null);
       await refresh();
+      onChanged?.();
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Could not delete the file.');
@@ -281,8 +343,50 @@ export default function ProjectUploads({
     }
   }
 
+  /**
+   * Put a deleted file back.
+   *
+   * NO CONFIRMATION, deliberately. Restoring is the undo, and asking somebody
+   * to confirm an undo is asking them to confirm twice for one mistake. The
+   * API refuses a row whose window has closed, which is the only case where
+   * this can fail for a reason the student can act on — so that message is
+   * shown verbatim rather than replaced with a generic one.
+   */
+  async function restore(file) {
+    setRestoringId(file.id);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/uploads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creationId: file.id, action: 'restore' }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? 'Could not restore the file.');
+      }
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Could not restore the file.');
+    } finally {
+      setRestoringId(null);
+    }
+  }
+
+  // AFTER every hook, never before one: an early return above them would
+  // change the hook order the moment the bin filled up.
+  //
+  // Only once the answer is in. Hiding while `state` is 'loading' would make
+  // the section appear a beat after the page, which looks like a late-arriving
+  // error rather than a bin that turned out to have something in it.
+  if (hideWhenEmpty && state === 'ready' && files.length === 0) return null;
+
   return (
-    <section className={showRule ? `mt-6 border-t ${t.rule} pt-5` : ''}>
+    <section
+      className={`${showRule ? `mt-6 border-t ${t.rule} pt-5` : ''} ${className}`.trim()}
+    >
       <header className="mb-2.5 flex flex-wrap items-center justify-between gap-3">
         <p className={`m-0 ${t.eyebrow}`}>{title}</p>
 
@@ -298,6 +402,11 @@ export default function ProjectUploads({
             </button>
           )}
 
+          {/* NO UPLOAD BUTTON IN THE BIN. You cannot add to a list of things
+              you removed, and an Upload control here would put the new file
+              in the other section — which reads as the upload having failed. */}
+          {!deleted && (
+            <>
           <input
             ref={inputRef}
             type="file"
@@ -318,6 +427,8 @@ export default function ProjectUploads({
             <Icon name="creations" size={13} aria-hidden="true" />
             {busy ? 'Uploading…' : 'Upload'}
           </m.button>
+            </>
+          )}
         </div>
       </header>
 
@@ -357,7 +468,9 @@ export default function ProjectUploads({
       {/* An empty bucket is a real state and says so, rather than an empty row
           that reads as a loading bug. */}
       {state === 'ready' && files.length === 0 && (
-        <p className={`text-[12.5px] ${t.muted}`}>Nothing uploaded yet.</p>
+        <p className={`text-[12.5px] ${t.muted}`}>
+          {deleted ? 'Nothing deleted recently.' : 'Nothing uploaded yet.'}
+        </p>
       )}
 
       {/* THE SAME MOTION THE REST OF THE PAGE USES, not a new one invented here:
@@ -380,49 +493,94 @@ export default function ProjectUploads({
           {files.map((f) => {
             const kind = fileKind(f);
             const size = readableSize(f.size);
+            const left = deleted ? recoveryLabel(f.recoverableUntil) : null;
+            const busyRestoring = restoringId === f.id;
+
             return (
               <m.li key={f.path} variants={rise} className="group relative">
-                {/* A BUTTON CANNOT LIVE INSIDE THE ANCHOR - nesting interactive
-                    elements is invalid HTML and a screen reader reads it as one
-                    confused control - so it is a sibling positioned over the
-                    corner instead.
+                {/* THE LIFT MOVED OUT HERE, AND THAT IS THE FIX.
+                    It used to sit on the anchor, so hovering a tile raised the
+                    anchor 4px and scaled it while the corner button — a
+                    sibling, positioned against the li — stayed exactly where
+                    it was. The button visibly came unstuck from the tile it
+                    belongs to, worst at the moment it faded in, which is
+                    precisely when you are looking at it.
 
-                    Visible on hover AND on focus: hover-only would make deleting
-                    impossible from a keyboard, and on a touch screen there is no
-                    hover at all, which is why it also stays visible below the
-                    hover breakpoint. */}
-                <button
-                  type="button"
-                  aria-label={`Delete ${f.name}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPendingDelete(f);
-                  }}
-                  className={`absolute right-1.5 top-1.5 z-[1] inline-flex h-6 w-6 items-center justify-center rounded-md border opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 max-[860px]:opacity-100 ${t.deleteButton}`}
+                    One hover target now owns both. whileTap stays on the
+                    anchor: pressing Delete should not bounce the whole tile. */}
+                <m.div
+                  whileHover={liftCard.whileHover}
+                  className="relative flex h-full flex-col"
                 >
-                  <Icon name="trash" size={12} aria-hidden="true" />
-                </button>
+                  {/* A BUTTON CANNOT LIVE INSIDE THE ANCHOR - nesting
+                      interactive elements is invalid HTML and a screen reader
+                      reads it as one confused control - so it is a sibling
+                      positioned over the corner instead.
 
-                <m.a
-                  href={f.signedUrl ?? '#'}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={f.name}
-                  {...liftCard}
-                  className={`flex h-full flex-col rounded-[10px] border p-1.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${t.tile}`}
-                >
-                  <Thumb file={f} kind={kind} tone={tone} />
+                      Visible on hover AND on focus: hover-only would make
+                      deleting impossible from a keyboard, and on a touch screen
+                      there is no hover at all, which is why it also stays
+                      visible below the hover breakpoint.
 
-                  <span className={`mt-1.5 block truncate text-[10.5px] font-medium ${t.name}`}>
-                    {f.name}
-                  </span>
-                  <span className={`mt-0.5 flex items-center gap-1 truncate whitespace-nowrap text-[9.5px] ${t.meta}`}>
-                    <Icon name={kind.icon} size={10} aria-hidden="true" />
-                    {kind.label}
-                    {size !== null && <span aria-hidden="true">·</span>}
-                    {size !== null && <span>{size}</span>}
-                  </span>
-                </m.a>
+                      It now grows in from 92% and 2px up rather than simply
+                      appearing — a control that fades in at full size on a
+                      surface that is itself moving reads as a second thing
+                      arriving, and the two motions fought each other. Same
+                      200ms for opacity and transform so they land together;
+                      `motion-reduce` drops the travel and keeps the fade. */}
+                  <button
+                    type="button"
+                    aria-label={
+                      deleted ? `Restore ${f.name}` : `Delete ${f.name}`
+                    }
+                    disabled={busyRestoring}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (deleted) void restore(f);
+                      else setPendingDelete(f);
+                    }}
+                    className={`absolute right-1.5 top-1.5 z-[1] inline-flex h-6 w-6 origin-top-right scale-90 items-center justify-center rounded-md border opacity-0 transition-[opacity,transform,background-color,border-color] duration-200 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-opacity max-[860px]:translate-y-0 max-[860px]:scale-100 max-[860px]:opacity-100 -translate-y-0.5 ${
+                      deleted ? t.restoreButton : t.deleteButton
+                    }`}
+                  >
+                    <Icon
+                      name={deleted ? 'restore' : 'trash'}
+                      size={12}
+                      aria-hidden="true"
+                      className={busyRestoring ? 'animate-pulse' : undefined}
+                    />
+                  </button>
+
+                  <m.a
+                    href={f.signedUrl ?? '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={f.name}
+                    whileTap={liftCard.whileTap}
+                    className={`flex h-full flex-col rounded-[10px] border p-1.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${t.tile}`}
+                  >
+                    <Thumb file={f} kind={kind} tone={tone} />
+
+                    <span className={`mt-1.5 block truncate text-[10.5px] font-medium ${t.name}`}>
+                      {f.name}
+                    </span>
+                    <span className={`mt-0.5 flex items-center gap-1 truncate whitespace-nowrap text-[9.5px] ${t.meta}`}>
+                      <Icon name={kind.icon} size={10} aria-hidden="true" />
+                      {kind.label}
+                      {size !== null && <span aria-hidden="true">·</span>}
+                      {size !== null && <span>{size}</span>}
+                    </span>
+                    {/* The clock, and only in the bin. It is the one fact that
+                        decides whether to act now or later, so it is on the
+                        tile rather than in a tooltip. */}
+                    {left !== null && (
+                      <span className="mt-0.5 flex items-center gap-1 truncate whitespace-nowrap text-[9.5px] font-semibold text-rose-500">
+                        <Icon name="clock" size={10} aria-hidden="true" />
+                        {left}
+                      </span>
+                    )}
+                  </m.a>
+                </m.div>
               </m.li>
             );
           })}
@@ -430,10 +588,16 @@ export default function ProjectUploads({
       )}
 
       {/* THE CONFIRMATION.
-          Deleting a student's own recording is not undoable - the object leaves
-          the bucket and the row leaves the table - so it asks first, and says
-          plainly that it cannot be undone rather than the usual "are you sure?"
-          which tells the reader nothing they did not know.
+          It still asks — a recording is somebody's own work — but it no longer
+          claims the delete is final, because it is not. The route sets
+          `deleted_at` and the file stays restorable for 30 days; only
+          `creation:purge` in the sync service makes it permanent.
+
+          THE COPY HERE SAID "This cannot be undone." AND THAT WAS SIMPLY
+          WRONG once the delete went soft. A dialog that overstates the
+          consequence is not harmlessly cautious: it stops people deleting
+          things they meant to delete, and it teaches them the warnings in this
+          app are not worth reading.
 
           The file's NAME is in the question. "Delete this file?" over a grid of
           tiles leaves the reader checking which one they clicked; naming it
@@ -465,7 +629,8 @@ export default function ProjectUploads({
                 </h2>
                 <p className="m-0 mt-1 break-words text-[12.5px] text-ink/70">
                   <span className="font-semibold">{pendingDelete.name}</span> will be
-                  removed from your files. <strong>This cannot be undone.</strong>
+                  moved to <strong>Recently deleted</strong>. You can restore it for{' '}
+                  <strong>30 days</strong>, after which it is removed permanently.
                 </p>
               </div>
             </div>
