@@ -26,13 +26,6 @@ import { CONTEXT_CHIPS, CURRENT_USER, DASHBOARD_DATE, NEXT_SESSION } from './fix
  * data - that is exactly the confusion this whole exercise exists to remove.
  */
 
-// NO AUTH YET. The dashboard asks for one hard-coded student because the API
-// takes an id in the path and nobody signs in. When sign-in lands, this
-// constant and the id in the URL both disappear: the route becomes `me` and the
-// database answers for whoever is holding the session.
-export const DEMO_STUDENT_ID =
-  process.env.NEXT_PUBLIC_DEMO_STUDENT_ID ?? 'a3b3ca43-60a3-4049-9bd8-98dbf3c72c32';
-
 function toUser(profile) {
   if (!profile) return CURRENT_USER;
   return {
@@ -260,7 +253,16 @@ function toNextSession(session) {
   };
 }
 
-export function useLiveDashboard(studentId = DEMO_STUDENT_ID) {
+/**
+ * The signed-in student's dashboard.
+ *
+ * IT TAKES NO ID ANY MORE. Until 8 Oct 2026 this hook defaulted to a hard-coded
+ * `DEMO_STUDENT_ID` and asked `/api/v1/students/<id>/dashboard`, which returned
+ * whoever you named. The route is now `/students/me`: the server reads the
+ * session cookie and row security answers for its holder, so there is no id to
+ * pass and none to tamper with.
+ */
+export function useLiveDashboard() {
   const [state, setState] = useState({
     isLive: false,
     loading: true,
@@ -276,8 +278,21 @@ export function useLiveDashboard(studentId = DEMO_STUDENT_ID) {
     let cancelled = false;
     const controller = new AbortController();
 
-    fetch(`/api/v1/students/${studentId}/dashboard`, { signal: controller.signal })
+    fetch('/api/v1/students/me/dashboard', { signal: controller.signal })
       .then(async (res) => {
+        // A 401 means the session ended underneath us - expired, or signed out
+        // in another tab. The proxy guards this section on navigation, but this
+        // page is already open, and leaving fixtures on screen would be the
+        // masquerade this file exists to prevent. A full assign rather than a
+        // router push: the cookie state changed, so everything server-rendered
+        // has to be fetched again.
+        if (res.status === 401 && typeof window !== 'undefined') {
+          window.location.assign('/login');
+          // Resolves nothing, on purpose. The navigation is already underway
+          // and setting state here would flash an error first.
+          return new Promise(() => {});
+        }
+
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(body?.error?.message ?? `Request failed (${res.status})`);
@@ -319,7 +334,7 @@ export function useLiveDashboard(studentId = DEMO_STUDENT_ID) {
       cancelled = true;
       controller.abort();
     };
-  }, [studentId]);
+  }, []);
 
   return state;
 }

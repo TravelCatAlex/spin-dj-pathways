@@ -11,10 +11,19 @@ import { createClient } from '@supabase/supabase-js';
  *
  * That key bypasses RLS entirely. It must never reach the browser: no
  * NEXT_PUBLIC_ prefix, and nothing that imports this file may be a client
- * component. When the portal gains real sign-in, the per-student policies move
- * to the database and this client is replaced by the user's own session - at
- * which point the route stops being able to read anybody else's rows even by
- * mistake, which is the actual protection.
+ * component.
+ *
+ * HALF OF THAT HAS NOW HAPPENED, and the half that has not is the point of this
+ * note. Migration 0053 put per-student policies in the database and the
+ * dashboard moved to `/students/me`, which reads through the viewer's own
+ * session - see supabase-session.ts. That route can no longer read anybody
+ * else's rows even by mistake, which is the actual protection.
+ *
+ * `app/api/v1/uploads` still uses this client. It takes a `studentId` from the
+ * caller and asks nobody who they are, so anyone can list or write another
+ * student's creations by naming them. It is the remaining hole, it is not new,
+ * and it is recorded in the file's own header. Closing it is the same change
+ * made twice: the viewer's session instead of the caller's word.
  *
  * It fails closed. A missing variable throws here rather than producing a
  * client that returns empty results, because "no rows" and "not configured"
