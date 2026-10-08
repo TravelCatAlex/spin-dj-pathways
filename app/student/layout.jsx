@@ -35,13 +35,40 @@ function Shell({ children }) {
   const activeTab =
     Object.keys(TAB_PATH).find((id) => TAB_PATH[id] === pathname) ?? 'home';
 
+  /**
+   * A REAL SIGN-OUT, which this was not.
+   *
+   * It used to be `router.push('/login')` — a navigation and nothing else. The
+   * session stayed whole, so the back button or typing /student put you right
+   * back in. On a shared machine, which a studio laptop is, that is not a
+   * cosmetic difference.
+   *
+   * POST, because a GET sign-out can be fired by any <img> on any page the
+   * student visits. The handler revokes the refresh token and clears the
+   * cookies; `replace` keeps the dashboard out of history, and `refresh` makes
+   * the server components re-run with the cookies now gone.
+   *
+   * The navigation happens whether or not the request succeeded. A sign-out
+   * that reports failure and leaves somebody sitting in the dashboard is worse
+   * than one that did its local half quietly.
+   */
+  async function signOut() {
+    try {
+      await fetch('/auth/signout', { method: 'POST' });
+    } catch {
+      // Deliberately swallowed. See above.
+    }
+    router.replace('/login');
+    router.refresh();
+  }
+
   return (
     <DashboardLayout
       user={live.user}
       loading={live.loading}
       activeTab={activeTab}
       onTabChange={(id) => router.push(TAB_PATH[id] ?? TAB_PATH.home)}
-      onLogout={() => router.push('/login')}
+      onLogout={signOut}
       onProfileClick={() => router.push(TAB_PATH.profile)}
     >
       {children}

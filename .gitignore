@@ -5,3 +5,10 @@ next-env.d.ts
 
 # TypeScript incremental build cache - a local artifact, never source.
 tsconfig.tsbuildinfo
+
+# Environment files. The pattern above only caught .env*.local, which let a
+# real .env holding a SERVICE ROLE key be committed by `git add -A` on 8 Oct
+# 2026. Ignore every .env except the example, which carries names and no values.
+.env
+.env.*
+!.env.example
