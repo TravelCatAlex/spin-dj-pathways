@@ -75,6 +75,37 @@ function fullName(first: string | null, last: string | null): string | null {
   return name === '' ? null : name;
 }
 
+/**
+ * The most ids one `.in(...)` filter may carry.
+ *
+ * PostgREST takes its filters in the QUERY STRING, so `.in('id', ids)` becomes a
+ * URL that grows with the list. Past a point the request simply fails, and the
+ * failure is not a friendly one - Node's fetch raises `HeadersOverflowError`
+ * before anything is sent, so there is no status code to read and the message
+ * says "fetch failed".
+ *
+ * Measured against this database, 8 Oct 2026, with uuid keys (~37 chars each):
+ *
+ *   300 ids  (~11,100 chars)  ok
+ *   400 ids  (~14,800 chars)  HeadersOverflowError
+ *   669 ids  (~24,800 chars)  Bad Request
+ *
+ * 200 is half the first failing size, which leaves room for the rest of the URL
+ * and for any proxy with a smaller limit than Node's.
+ *
+ * THIS IS NOT HYPOTHETICAL. `attendance_record` holds 45,987 rows across 904
+ * students; the busiest has 1,257 and **21 students are already over 300**.
+ * Their dashboards returned nothing at all - a 500 with "fetch failed" - which
+ * the UI then showed as fixtures.
+ */
+const IN_CHUNK = 200;
+
+function chunked<T>(items: T[]): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += IN_CHUNK) out.push(items.slice(i, i + IN_CHUNK));
+  return out;
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
@@ -132,14 +163,17 @@ export async function GET(
 
   const sessionIds = (attendance ?? []).map((a) => a.class_session_id).filter(Boolean);
 
-  let sessions: SessionRow[] = [];
-  if (sessionIds.length > 0) {
+  // THE ONLY UNBOUNDED LIST ON THIS ROUTE, so the only one that needs chunking.
+  // Everything below derives from `shown`, which is at most 40 sessions, and a
+  // teacher or cohort list drawn from 40 sessions cannot overflow a URL.
+  const sessions: SessionRow[] = [];
+  for (const batch of chunked(sessionIds)) {
     const { data, error } = await db
       .from('class_session')
       .select(
         'id, cohort_id, title, starts_at, ends_at, local_start, local_end, timezone_label, duration_minutes, capacity, booked_count, location_title, kind, is_cancelled',
       )
-      .in('id', sessionIds)
+      .in('id', batch)
       .order('starts_at', { ascending: true });
 
     if (error) {
@@ -148,8 +182,21 @@ export async function GET(
         { status: 500 },
       );
     }
-    sessions = (data ?? []) as SessionRow[];
+    sessions.push(...((data ?? []) as SessionRow[]));
   }
+
+  // Each batch came back ordered, but the batches are not ordered against each
+  // other, and everything downstream - next session, upcoming, recent - reads
+  // this as one ascending list. Sorting once here is what makes the chunking
+  // invisible to the rest of the route.
+  //
+  // Nulls last, because `starts_at` is nullable and a session with no start is
+  // filtered out below rather than shown first.
+  sessions.sort((a, b) => {
+    if (a.starts_at === null) return 1;
+    if (b.starts_at === null) return -1;
+    return a.starts_at < b.starts_at ? -1 : a.starts_at > b.starts_at ? 1 : 0;
+  });
 
   const nowIso = new Date().toISOString();
   // A cancelled session is not the next session. It stays in the schedule list,
