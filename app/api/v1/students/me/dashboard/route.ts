@@ -1,20 +1,28 @@
 import { NextResponse } from 'next/server';
-import { serverSupabase } from '../../../../../lib/supabase';
+import type { NextRequest } from 'next/server';
+
+import { sessionSupabase } from '../../../../../lib/supabase-session';
 
 /**
- * One student's dashboard, in one request.
+ * The signed-in student's dashboard, in one request.
  *
- * ================================ NO AUTH =================================
- * This route takes a student id in the PATH and returns that student's data to
- * anybody who asks. That is a deliberate, temporary choice for wiring the
- * dashboard up (asked for 18 Sep 2026) and it is not shippable: change the id
- * and you read a different person.
+ * ============================ NO ID, BY DESIGN ============================
+ * This route took a student id in the PATH until 8 Oct 2026 and returned that
+ * student's data to anybody who asked - change the id, read a different person.
+ * It was a deliberate temporary choice for wiring the dashboard up (asked for
+ * 18 Sep 2026) and it was never shippable.
  *
- * What replaces it is not a check in this file. The database already has RLS on
- * with no policies, so the real fix is per-student policies plus the viewer's
- * own session, after which `me` is implied and no id is accepted at all - see
- * REQUIRED_APIS.md, which specifies `/students/me` for exactly this reason.
- * Until then this must not be deployed anywhere public.
+ * WHAT REPLACED IT IS NOT A CHECK IN THIS FILE, and that distinction is the
+ * whole point. The client below carries the VIEWER'S OWN JWT, so migration
+ * 0053's row security decides every query here. `student` returns one row -
+ * theirs - because `student_self_select` says `id = app.current_student_id()`,
+ * and `attendance_record`, `class_session`, `cohort` and `teacher` are filtered
+ * the same way underneath. A handler that forgot to filter would still return
+ * nothing it should not, which a handler holding the service-role key could
+ * never promise.
+ *
+ * So there is no `.eq('id', …)` on the student lookup any more. There is
+ * nothing to pass and nothing to tamper with: `me` is whoever holds the cookie.
  * ==========================================================================
  *
  * WHAT IS REAL AND WHAT IS NULL. Four of the dashboard's twelve sections have a
@@ -106,16 +114,15 @@ function chunked<T>(items: T[]): T[][] {
   return out;
 }
 
-export async function GET(
-  _request: Request,
-  context: { params: Promise<{ id: string }> },
-): Promise<NextResponse> {
-  // Next 15+ hands params in as a promise.
-  const { id } = await context.params;
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Typed through the factory rather than re-declared. A bare `let db;`
+  // assigned by destructuring infers `any`, and an `any` client silently turns
+  // every row below into `any` too - which is how a route loses its types
+  // without anything going red.
+  let session: ReturnType<typeof sessionSupabase>;
 
-  let db;
   try {
-    db = serverSupabase();
+    session = sessionSupabase(request);
   } catch (error) {
     // Configuration is a 500, not a 404. "Not set up" must never be reported as
     // "this student has nothing".
@@ -125,24 +132,63 @@ export async function GET(
     );
   }
 
+  const { supabase: db, commit } = session;
+
+  /**
+   * getUser(), not getSession(), and not the proxy's word for it.
+   *
+   * This is the authoritative check and it belongs here, next to the data.
+   * getSession() reads the cookie without revalidating the JWT, so it will
+   * happily report a user for a token that was forged or revoked. The proxy's
+   * getClaims() is an optimistic filter for redirects and nothing is allowed to
+   * depend on it - Next's own authentication guide is explicit that a proxy
+   * check must not be the only one.
+   */
+  const { data: auth, error: authError } = await db.auth.getUser();
+
+  if (authError || auth?.user == null) {
+    return commit(
+      NextResponse.json(
+        { error: { code: 'not_signed_in', message: 'Sign in to read this.' } },
+        { status: 401 },
+      ),
+    );
+  }
+
+  // NO FILTER, AND THAT IS NOT AN OVERSIGHT. `student_self_select` resolves the
+  // row from the JWT, so this returns exactly one: theirs. An `.eq('id', …)`
+  // here would be a second opinion about who the caller is, and two answers to
+  // that question is how one of them ends up wrong.
   const { data: students, error: studentError } = await db
     .from('student')
     .select('id, first_name, last_name, email, phone, date_of_birth')
-    .eq('id', id)
     .limit(1);
 
   if (studentError) {
-    return NextResponse.json(
-      { error: { code: 'query_failed', message: studentError.message } },
-      { status: 500 },
+    return commit(
+      NextResponse.json(
+        { error: { code: 'query_failed', message: studentError.message } },
+        { status: 500 },
+      ),
     );
   }
 
   const student = (students as StudentRow[] | null)?.[0];
   if (student === undefined) {
-    return NextResponse.json(
-      { error: { code: 'not_found', message: `No student with id ${id}.` } },
-      { status: 404 },
+    // Signed in, and row security returns nothing. That is an identity that was
+    // never linked to a student, or linked to one that has since gone - not a
+    // bad request, and worth its own code so RUNBOOK §10a can be reached for
+    // rather than this being read as an empty dashboard.
+    return commit(
+      NextResponse.json(
+        {
+          error: {
+            code: 'no_student_for_session',
+            message: 'This account is not linked to a student record.',
+          },
+        },
+        { status: 404 },
+      ),
     );
   }
 
@@ -155,9 +201,11 @@ export async function GET(
     .eq('student_id', student.id);
 
   if (attendanceError) {
-    return NextResponse.json(
-      { error: { code: 'query_failed', message: attendanceError.message } },
-      { status: 500 },
+    return commit(
+      NextResponse.json(
+        { error: { code: 'query_failed', message: attendanceError.message } },
+        { status: 500 },
+      ),
     );
   }
 
@@ -177,9 +225,11 @@ export async function GET(
       .order('starts_at', { ascending: true });
 
     if (error) {
-      return NextResponse.json(
-        { error: { code: 'query_failed', message: error.message } },
-        { status: 500 },
+      return commit(
+        NextResponse.json(
+          { error: { code: 'query_failed', message: error.message } },
+          { status: 500 },
+        ),
       );
     }
     sessions.push(...((data ?? []) as SessionRow[]));
@@ -297,7 +347,9 @@ export async function GET(
           name: cohortById.get(cohortSource.cohort_id) ?? null,
         };
 
-  return NextResponse.json({
+  // Built first, then committed, because the token may have rotated during
+  // getUser() above and those cookies have to travel on THIS response.
+  const payload = {
     profile: {
       id: student.id,
       firstName: student.first_name,
@@ -348,5 +400,7 @@ export async function GET(
       'opportunities',
       'journey',
     ],
-  });
+  };
+
+  return commit(NextResponse.json(payload));
 }
