@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { prefixOwner } from './app/lib/role';
 import { sessionSupabase } from './app/lib/supabase-session';
 
 /**
@@ -30,13 +31,15 @@ import { sessionSupabase } from './app/lib/supabase-session';
  * student's rows calls getUser() itself, and RLS answers underneath it.
  */
 
-/** Everything below these prefixes requires a session. */
-const GUARDED = ['/student'];
-
+/**
+ * Everything below these prefixes requires a session.
+ *
+ * Derived from `ROLE_PREFIXES` rather than listed again: a prefix that a role
+ * owns is a prefix that needs a session, and the day a third role appears both
+ * facts should arrive together.
+ */
 function isGuarded(pathname: string) {
-  return GUARDED.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  return prefixOwner(pathname) !== null;
 }
 
 export async function proxy(request: NextRequest) {
@@ -58,9 +61,22 @@ export async function proxy(request: NextRequest) {
     return commit(NextResponse.redirect(url));
   }
 
+  // THE ROLE IS NOT CHECKED HERE, DELIBERATELY. A role lives on `app.identity`,
+  // so answering "student or teacher" costs a database round trip, and this runs
+  // on every navigation including prefetches - which is the whole reason
+  // getClaims() is used above instead of getUser(). Paying that on every request
+  // to answer a question two prefixes care about is the wrong trade. The
+  // cross-role redirect lives in each section's layout instead, in
+  // `app/lib/require-role.ts`, which runs once on entry to a section.
+  //
   // A signed-in student has no business on the sign-in screen. Without this,
   // the back button after signing in shows the form again, and typing a code
   // into it starts a second, pointless round of email.
+  //
+  // It sends everybody to `/student` because it does not know any better, and a
+  // teacher is then moved on to `/teacher` by that section's guard. One extra
+  // hop, and it cannot loop: the guard redirects only when the role does not own
+  // the prefix, and `/teacher`'s guard finds a teacher's role correct.
   if (signedIn && pathname === '/login') {
     const url = request.nextUrl.clone();
     url.pathname = '/student';

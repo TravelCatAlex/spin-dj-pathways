@@ -38,12 +38,14 @@ import { serverSupabase } from '../../lib/supabase';
  * drift would mail codes to people the verify step then refuses.
  * ==========================================================================
  *
- * WHAT THIS STILL DOES NOT DO. Delivery needs custom SMTP and a `{{ .Token }}`
- * template - Supabase's built-in sender reaches project members only, a few
- * messages an hour, and the default template mails a magic link rather than the
- * six digits the next screen asks for. RUNBOOK §4f. Until that is configured
- * this returns 202 and nothing arrives, which is indistinguishable from every
- * other failure by design.
+ * DELIVERY WAS THE OTHER HALF OF THE SAME FAILURE, AND IS NOW CONFIGURED. A code
+ * needs custom SMTP and a `{{ .Token }}` template - Supabase's built-in sender
+ * reaches project members only, a few messages an hour, and the default template
+ * mails a magic link rather than the six digits the next screen asks for.
+ * RUNBOOK §4f. Both were set on 9 Oct 2026, and a student has since signed in
+ * end to end. Before that this returned 202 and nothing arrived, which was
+ * indistinguishable from every other failure by design - and is precisely why
+ * the otp_disabled above sat unnoticed from the first commit.
  *
  * ONE HONEST WEAKNESS, RECORDED RATHER THAN PAPERED OVER. A refused address now
  * returns without the two round trips an admitted one makes, so the replies
