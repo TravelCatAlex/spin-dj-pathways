@@ -131,7 +131,7 @@ export default function SignInCard({ next }) {
     // suppresses one level deep, so each wrapper needs its own.
     <m.div
       suppressHydrationWarning
-      className="grid min-h-screen place-items-center bg-[linear-gradient(135deg,#faf8ff_0%,#e7dcff_100%)] p-6 text-center text-ink"
+      className="grid min-h-screen place-items-center bg-[linear-gradient(135deg,#faf8ff_0%,#e7dcff_100%)] p-6 text-center text-ink max-[380px]:p-4"
       variants={gate}
       initial="hidden"
       animate="show"
@@ -154,7 +154,7 @@ export default function SignInCard({ next }) {
 
         <m.p
           suppressHydrationWarning
-          className="m-0 mb-7 text-ink-soft"
+          className="m-0 mb-7 text-balance text-ink-soft"
           variants={gateItem}
           custom={GATE_TIMES.prompt}
           initial="hidden"
@@ -207,7 +207,12 @@ export default function SignInCard({ next }) {
           )}
 
           {/* aria-live, so a screen reader hears the refusal. Without it the
-              message appears silently and the field simply empties. */}
+              message appears silently and the field simply empties.
+
+              min-h is one line of text-sm, held whether or not there is a
+              message. It is the only thing keeping the button still: let this
+              collapse and a refusal shoves the button 20px down the screen,
+              under a thumb already travelling toward where it used to be. */}
           <p
             role="status"
             aria-live="polite"
@@ -239,7 +244,7 @@ export default function SignInCard({ next }) {
         </form>
 
         {!onEmailStage && (
-          <div className="mt-5 flex justify-center gap-5 text-sm text-ink-soft">
+          <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-ink-soft">
             <button
               type="button"
               className="underline underline-offset-4 disabled:opacity-60"
