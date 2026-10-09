@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { homeFor } from '../../lib/role';
+import type { Role } from '../../lib/role';
 import { sessionSupabase } from '../../lib/supabase-session';
 
 /**
@@ -32,10 +34,14 @@ export const dynamic = 'force-dynamic';
  * arrives from whoever wrote the link - an open redirect is the standard way to
  * make a phishing page wear your domain. A value starting `//` is a protocol-
  * relative URL to somebody else's host, which is why the second test is there.
+ *
+ * THE FALLBACK IS A PARAMETER since 9 Oct 2026, because `/student` is no longer
+ * the only home. It is the caller's business which portal this role starts in;
+ * this function's only business is refusing to leave the origin.
  */
-function safeNext(value: unknown): string {
-  if (typeof value !== 'string') return '/student';
-  if (!value.startsWith('/') || value.startsWith('//')) return '/student';
+function safeNext(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  if (!value.startsWith('/') || value.startsWith('//')) return fallback;
   return value;
 }
 
@@ -68,6 +74,9 @@ export async function POST(request: NextRequest) {
   }
 
   // The session now exists. From here a failure must not leave it standing.
+  // The identity id it returns is deliberately NOT captured. The role is read
+  // below through the viewer's own session instead, because using the returned
+  // id as a filter would be a second opinion about who the caller is.
   const { error: linkError } = await supabase.rpc('link_signed_in_identity');
 
   if (linkError) {
@@ -80,5 +89,40 @@ export async function POST(request: NextRequest) {
     return commit(NextResponse.json({ error: 'refused' }, { status: 401 }));
   }
 
-  return commit(NextResponse.json({ ok: true, next: safeNext(body.next) }));
+  // Which portal is theirs. The link above has just told us which identity this
+  // is, and its role decides where they land - a teacher sent to `/student`
+  // would be bounced on by that section's guard, which works but shows them a
+  // page they have no business seeing first.
+  //
+  // READ THROUGH THEIR OWN SESSION, like everything else: `identity_self_select`
+  // returns exactly one row, theirs. The `identityId` the link returned is NOT
+  // used as a filter - it would be a second opinion about who the caller is, and
+  // two answers to that question is how one of them ends up wrong.
+  const { data: identityRows } = await supabase
+    .from('identity')
+    .select('student_id, teacher_id')
+    .limit(1);
+
+  const identity = identityRows?.[0];
+  const role: Role =
+    identity == null
+      ? 'none'
+      : identity.teacher_id !== null
+        ? 'teacher'
+        : identity.student_id !== null
+          ? 'student'
+          : 'none';
+
+  // An explicit `next` still wins when it points somewhere on this origin: it
+  // is where they were going before the proxy interrupted them, and finishing
+  // that journey is the point of carrying it. `homeFor(role)` is the fallback
+  // rather than a hard destination, so `safeNext`'s open-redirect rule is
+  // untouched.
+  return commit(
+    NextResponse.json({
+      ok: true,
+      role,
+      next: safeNext(body.next, homeFor(role)),
+    }),
+  );
 }

@@ -1,91 +1,26 @@
-'use client';
-
-import { usePathname, useRouter } from 'next/navigation';
-
-import DashboardLayout from '../components/templates/DashboardLayout';
-import { LiveDashboardProvider, useLive } from '../lib/live-context';
-
-/**
- * Tab id → route. The Sidebar still speaks in the tab ids from NAV_ITEMS, so
- * the translation lives here and nothing below the layout has to know a
- * router exists. That is what keeps Sidebar, NavItem and the mobile drawer
- * untouched by the move to real routes.
- *
- * `profile` is in the table although it is not in NAV_ITEMS — the profile
- * block at the foot of the rail opens it, and it needs an address like
- * every other view.
- */
-const TAB_PATH = {
-  home: '/student',
-  projects: '/student/projects',
-  creations: '/student/creations',
-  pathway: '/student/pathway',
-  events: '/student/events',
-  profile: '/student/profile',
-};
-
-function Shell({ children }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const live = useLive();
-
-  // Derived from the URL, never stored. A tab held in state and a URL are two
-  // sources for one fact, and they disagree the moment the back button is
-  // pressed — which is exactly what the old activeTab state did.
-  const activeTab =
-    Object.keys(TAB_PATH).find((id) => TAB_PATH[id] === pathname) ?? 'home';
-
-  /**
-   * A REAL SIGN-OUT, which this was not.
-   *
-   * It used to be `router.push('/login')` — a navigation and nothing else. The
-   * session stayed whole, so the back button or typing /student put you right
-   * back in. On a shared machine, which a studio laptop is, that is not a
-   * cosmetic difference.
-   *
-   * POST, because a GET sign-out can be fired by any <img> on any page the
-   * student visits. The handler revokes the refresh token and clears the
-   * cookies; `replace` keeps the dashboard out of history, and `refresh` makes
-   * the server components re-run with the cookies now gone.
-   *
-   * The navigation happens whether or not the request succeeded. A sign-out
-   * that reports failure and leaves somebody sitting in the dashboard is worse
-   * than one that did its local half quietly.
-   */
-  async function signOut() {
-    try {
-      await fetch('/auth/signout', { method: 'POST' });
-    } catch {
-      // Deliberately swallowed. See above.
-    }
-    router.replace('/login');
-    router.refresh();
-  }
-
-  return (
-    <DashboardLayout
-      user={live.user}
-      loading={live.loading}
-      activeTab={activeTab}
-      onTabChange={(id) => router.push(TAB_PATH[id] ?? TAB_PATH.home)}
-      onLogout={signOut}
-      onProfileClick={() => router.push(TAB_PATH.profile)}
-    >
-      {children}
-    </DashboardLayout>
-  );
-}
+import { requireRole } from '../lib/require-role';
+import StudentShell from './StudentShell';
 
 /**
  * LAYOUT — /student
- * Sidebar and the student's data, held across every tab in the section.
- * Next keeps a layout mounted while you navigate within it, so the fetch in
- * LiveDashboardProvider runs once rather than once per tab.
+ *
+ * A SERVER COMPONENT SINCE 9 OCT 2026, and only so that `requireRole` can run
+ * here. The sidebar, the tab routing and the sign-out are unchanged and live in
+ * StudentShell beside this file; a layout cannot be both `'use client'` and
+ * `await` a guard, which is the whole reason for the split.
+ *
+ * THE GUARD IS NAVIGATION, NOT PROTECTION. A teacher who reaches `/student`
+ * already sees nothing here - migration 0053's `student_self_select` resolves
+ * `app.current_student_id()`, which is NULL for them, so the dashboard route
+ * answers `no_student_for_session`. This sends them to `/teacher` instead, so
+ * the result is their own portal rather than a correct-but-blank one.
+ *
+ * Next keeps a layout mounted while you navigate within it, so this costs one
+ * query on entry to the section rather than one per tab - and the fetch in
+ * LiveDashboardProvider still runs once, as before.
  */
-export default function StudentLayout({ children }) {
-  return (
-    <LiveDashboardProvider>
-      <Shell>{children}</Shell>
-    </LiveDashboardProvider>
-  );
+export default async function StudentLayout({ children }) {
+  await requireRole('student');
+
+  return <StudentShell>{children}</StudentShell>;
 }
