@@ -36,6 +36,24 @@ const SENT = 'If that address is on your account, a six-digit code is on its way
 /** Said only when the request never reached us, which is about the network. */
 const UNREACHABLE = 'Could not reach the server. Check your connection and try again.';
 
+/** Said on the code stage when the send was skipped deliberately. */
+const DEV_READY = 'Enter the code from the dev-otp script.';
+
+/**
+ * A DEV-ONLY shortcut to the code field that does NOT send an email.
+ *
+ * Off unless `NEXT_PUBLIC_DEV_OTP_ENTRY=true`. When on, the email stage offers a
+ * link that jumps straight to the code field without calling `/auth/otp`, so a
+ * code minted by `scripts/dev-otp.mjs` can be entered with no mail sent at all.
+ *
+ * IT IS NOT A SECURITY HOLE, even if the flag were left on in production. All it
+ * skips is DELIVERY. `/auth/verify` still demands a real code, and the only
+ * thing that can produce one is the service-role script - a stranger who reaches
+ * the code field this way has nothing to type. The flag exists to keep the extra
+ * link out of a real student's view, not to guard access.
+ */
+const DEV_OTP_ENTRY = process.env.NEXT_PUBLIC_DEV_OTP_ENTRY === 'true';
+
 export default function SignInCard({ next }) {
   const router = useRouter();
 
@@ -77,6 +95,17 @@ export default function SignInCard({ next }) {
     setNotice(SENT);
     setStage('code');
     setBusy(false);
+    requestAnimationFrame(() => codeRef.current?.focus());
+  }
+
+  // DEV ONLY. Reach the code field without sending an email - see DEV_OTP_ENTRY.
+  // The email is still required: /auth/verify reads it, and it must match the
+  // address the dev-otp script minted the code for.
+  function skipToCode() {
+    if (email.trim() === '') return;
+    setError(null);
+    setNotice(DEV_READY);
+    setStage('code');
     requestAnimationFrame(() => codeRef.current?.focus());
   }
 
@@ -242,6 +271,19 @@ export default function SignInCard({ next }) {
                 : 'Sign in'}
           </m.button>
         </form>
+
+        {onEmailStage && DEV_OTP_ENTRY && (
+          <div className="mt-5 text-sm text-ink-soft">
+            <button
+              type="button"
+              className="underline underline-offset-4 disabled:opacity-60"
+              disabled={busy}
+              onClick={skipToCode}
+            >
+              I already have a code (dev)
+            </button>
+          </div>
+        )}
 
         {!onEmailStage && (
           <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-ink-soft">

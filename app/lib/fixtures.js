@@ -23,6 +23,7 @@ export const NAV_ITEMS = [
   { id: 'creations', label: 'My Creations', icon: 'creations' },
   { id: 'pathway', label: 'My Pathway', icon: 'pathway' },
   { id: 'events', label: 'Events', icon: 'calendar' },
+  { id: 'notes', label: 'Notes', icon: 'note' },
 ];
 
 export const CONTEXT_CHIPS = [

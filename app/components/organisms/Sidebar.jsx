@@ -30,6 +30,10 @@ export default function Sidebar({
   onLogout,
   onProfileClick,
   loading = false,
+  // The nav defaults to the student's items, so the student shell is unchanged.
+  // The teacher shell passes its own (Private / Public notes) - one Sidebar,
+  // two rosters of links, no second copy of the rail to keep responsive.
+  navItems = NAV_ITEMS,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const railRef = useRef(null);
@@ -90,7 +94,7 @@ export default function Sidebar({
   const drawerContents = (
     <>
       <nav className="flex flex-col gap-[3px]" aria-label="Main">
-        {NAV_ITEMS.map((item, idx) => (
+        {navItems.map((item, idx) => (
           <NavItem
             key={item.id}
             icon={item.icon}
@@ -105,7 +109,7 @@ export default function Sidebar({
       {/* No divider rule: the wash's curved edge does that job on desktop, so
           the hairline only comes back once the wash is hidden. */}
       <m.div
-        custom={RAIL_TIMES.firstItem + NAV_ITEMS.length * RAIL_TIMES.betweenItems}
+        custom={RAIL_TIMES.firstItem + navItems.length * RAIL_TIMES.betweenItems}
         variants={railItem}
         initial="hidden"
         animate="show"
