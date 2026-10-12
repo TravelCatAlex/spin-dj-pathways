@@ -12,3 +12,6 @@ tsconfig.tsbuildinfo
 .env
 .env.*
 !.env.example
+
+# Local-only dev helper (mints an OTP via the service role) - not for the repo.
+scripts/dev-otp.mjs

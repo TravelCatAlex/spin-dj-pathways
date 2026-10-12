@@ -21,6 +21,7 @@ const TAB_PATH = {
   creations: '/student/creations',
   pathway: '/student/pathway',
   events: '/student/events',
+  notes: '/student/notes',
   profile: '/student/profile',
 };
 
