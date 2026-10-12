@@ -239,7 +239,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   let suggestions: Record<string, unknown>[] = [];
   try {
     const catalogue = await buildCatalogue();
-    const recs = await recommendCourses(answerText, catalogue);
+    const { suggestions: recs, interests } = await recommendCourses(answerText, catalogue);
+
+    // Store the model's inferred interests on the attempt (shown on the home card).
+    if (interests.length > 0) {
+      await admin.from('quiz_attempt').update({ interests }).eq('id', attempt.id);
+    }
+
     if (recs.length > 0) {
       const { data: sugRows, error: sugError } = await admin
         .from('quiz_suggestion')

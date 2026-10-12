@@ -131,10 +131,40 @@ function useLatestNote() {
   return { latest, loading };
 }
 
+/**
+ * The student's interests, derived from their latest quiz attempt. Empty until
+ * they take the quiz, in which case the card keeps its default fixture.
+ */
+function useQuizInterests() {
+  const [interests, setInterests] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/v1/students/me/interests');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled && (data.interests?.length ?? 0) > 0) {
+          setInterests(data.interests);
+        }
+      } catch {
+        // Keep the default on any failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return interests;
+}
+
 export default function StudentHomePage() {
   const router = useRouter();
   const live = useLive();
   const { latest: latestNote, loading: feedbackLoading } = useLatestNote();
+  const quizInterests = useQuizInterests();
 
   return (
     <Stagger trigger="home">
@@ -205,7 +235,10 @@ export default function StudentHomePage() {
           cards of different lengths stay the same height. */}
       <div className={TRIPLET}>
         <Reveal inView delay={CARD.first}>
-          <InterestsCard interests={INTERESTS} />
+          <InterestsCard
+            interests={quizInterests ?? INTERESTS}
+            onEdit={() => router.push('/student/quiz')}
+          />
         </Reveal>
         <Reveal inView delay={CARD.second}>
           <ProgressCard items={PROGRESS_ITEMS} />
