@@ -5,14 +5,15 @@ import { sessionSupabase } from '../../../../lib/supabase-session';
 
 /**
  * PATCH  /api/v1/notes/[id]  - edit the body of one of the teacher's own notes.
- * DELETE /api/v1/notes/[id]  - delete one of the teacher's own notes.
+ * DELETE /api/v1/notes/[id]  - SOFT-delete one of the teacher's own notes.
  *
- * Author-only, and that is RLS, not this file: `teacher_note_author_update` and
- * `teacher_note_author_delete` (migration 0056) match on
- * `author_teacher_id = app.current_teacher_id()`. A note that is not the viewer's
- * simply matches no row, so a PATCH or DELETE aimed at someone else's note reports
- * `not_found` rather than touching it. The id in the path is a filter, not an
- * authorisation - the policy is.
+ * DELETE IS A SOFT DELETE (migration 0058). The row is kept and `deleted_at` is
+ * stamped, so the note and its edit history are retained; the hard-delete path was
+ * removed from the database, so a real DELETE is not even reachable. Both PATCH and
+ * the soft delete are plain UPDATEs governed by `teacher_note_author_update`, which
+ * matches `author_teacher_id = app.current_teacher_id()` - a note that is not the
+ * viewer's matches no row and reports `not_found` rather than being touched. The id
+ * in the path is a filter, not an authorisation - the policy is.
  *
  * Only the body is editable here. Changing a note's KIND (private <-> public) or
  * its subject is deliberately not offered: it re-opens the roster check and the
@@ -144,10 +145,13 @@ export async function DELETE(
     );
   }
 
+  // Soft delete: stamp deleted_at. Already-deleted rows are left as they are
+  // (idempotent) - re-stamping would just move the timestamp.
   const { data: deleted, error: deleteError } = await db
     .from('teacher_note')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .is('deleted_at', null)
     .select('id')
     .limit(1);
 

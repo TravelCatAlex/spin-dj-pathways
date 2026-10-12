@@ -107,6 +107,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const { data: noteRows, error: noteError } = await db
     .from('teacher_note')
     .select('id, visibility, student_id, body, created_at, updated_at')
+    // Soft-deleted notes (0058) are kept in the table but not shown in the
+    // teacher's list. The author policy still returns them, so this filter is
+    // what hides them here; a future "Trash" view would drop it.
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (noteError) {

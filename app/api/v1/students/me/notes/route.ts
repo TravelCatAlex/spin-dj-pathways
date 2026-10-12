@@ -64,6 +64,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const { data: noteRows, error: noteError } = await db
     .from('teacher_note')
     .select('id, author_teacher_id, body, created_at')
+    // Defence in depth: teacher_note_student_select (0058) already excludes
+    // soft-deleted notes, so this is belt-and-braces rather than the boundary.
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (noteError) {

@@ -31,6 +31,19 @@ function formatWhen(iso) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+function formatWhenTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export default function NotesManager({ kind }) {
   const isPublic = kind === 'public';
   const { students } = useTeacherLive();
@@ -51,6 +64,10 @@ export default function NotesManager({ kind }) {
   // Delete — a two-step inline confirm; `deletingId` drives "Deleting…".
   const [confirmingId, setConfirmingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  // History — which note's panel is open, and a per-note cache of its revisions.
+  const [historyFor, setHistoryFor] = useState(null);
+  const [history, setHistory] = useState({});
 
   async function loadNotes() {
     try {
@@ -130,10 +147,39 @@ export default function NotesManager({ kind }) {
       if (response.ok) {
         setEditingId(null);
         setEditingBody('');
+        // The cached history for this note is now stale - an edit added a
+        // version and changed the current text. Drop it so reopening refetches.
+        setHistory((h) => {
+          const next = { ...h };
+          delete next[id];
+          return next;
+        });
         await loadNotes();
       }
     } finally {
       setSavingId(null);
+    }
+  }
+
+  async function toggleHistory(id) {
+    if (historyFor === id) {
+      setHistoryFor(null);
+      return;
+    }
+    setHistoryFor(id);
+    if (history[id]) return; // cached
+
+    setHistory((h) => ({ ...h, [id]: { status: 'loading' } }));
+    try {
+      const response = await fetch(`/api/v1/notes/${id}/history`);
+      const data = await response.json();
+      if (!response.ok) {
+        setHistory((h) => ({ ...h, [id]: { status: 'error' } }));
+        return;
+      }
+      setHistory((h) => ({ ...h, [id]: { status: 'ready', revisions: data.revisions } }));
+    } catch {
+      setHistory((h) => ({ ...h, [id]: { status: 'error' } }));
     }
   }
 
@@ -334,7 +380,79 @@ export default function NotesManager({ kind }) {
                         </div>
                       </div>
                     ) : (
-                      <p className="mt-2 text-xs text-muted">{formatWhen(note.created_at)}</p>
+                      <div className="mt-2 flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                          <span>{formatWhen(note.created_at)}</span>
+                          {note.updated_at && note.updated_at !== note.created_at && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span>edited {formatWhen(note.updated_at)}</span>
+                              <button
+                                type="button"
+                                className="text-purple hover:underline"
+                                onClick={() => toggleHistory(note.id)}
+                              >
+                                {historyFor === note.id ? 'Hide history' : 'View history'}
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {historyFor === note.id && (
+                          <div className="rounded-md border border-line bg-purple-50/40 p-3">
+                            {(() => {
+                              const h = history[note.id];
+                              if (!h || h.status === 'loading') {
+                                return <p className="text-xs text-muted">Loading history…</p>;
+                              }
+                              if (h.status === 'error') {
+                                return (
+                                  <p className="text-xs text-ink-soft">
+                                    History could not be loaded.
+                                  </p>
+                                );
+                              }
+                              return (
+                                <ol className="flex flex-col gap-2">
+                                  {/* The current text lives on the note, not in
+                                      the history table, so it is shown first and
+                                      the stored revisions (previous bodies)
+                                      follow, newest first. */}
+                                  <li className="text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-ink">Current</span>
+                                      <span className="text-muted">
+                                        {formatWhenTime(note.updated_at)}
+                                      </span>
+                                    </div>
+                                    <p className="mt-0.5 whitespace-pre-wrap text-ink">
+                                      {note.body}
+                                    </p>
+                                  </li>
+                                  {h.revisions.map((rev) => (
+                                    <li
+                                      key={rev.id}
+                                      className="border-t border-line pt-2 text-xs"
+                                    >
+                                      <span className="text-muted">
+                                        {formatWhenTime(rev.revised_at)}
+                                      </span>
+                                      <p className="mt-0.5 whitespace-pre-wrap text-ink-soft">
+                                        {rev.body}
+                                      </p>
+                                    </li>
+                                  ))}
+                                  {h.revisions.length === 0 && (
+                                    <li className="text-xs text-muted">
+                                      No earlier versions.
+                                    </li>
+                                  )}
+                                </ol>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </>
                 )}
