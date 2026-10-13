@@ -119,61 +119,42 @@ export interface Recommendation {
 }
 
 /**
- * Build the catalogue from the portal's OWN course data (the `app` schema): each
- * cohort is a course, and its teachers are whoever taught its sessions
- * (class_session -> class_session_teacher -> teacher). This is portal-native and,
- * unlike the WL service catalogue (whose staff_service link table is empty on this
- * environment), it actually carries teacher<->course links.
+ * Build the catalogue from the `app.course_catalogue` view (migration 0061): one
+ * row per (base course, teacher), unioning the WL `public.service` catalogue (123
+ * sold courses, teachers recovered through their sessions) and `app.cohort`
+ * (teachers via class_session_teacher), grouped by base course - the title before
+ * the first "|", so a course's duration/location variants collapse to one. A course
+ * with no resolvable teacher arrives as a single row with teacher_name null.
  *
- * Returns a list of {course, category, teacher}: one entry per (cohort, teacher),
- * or a teacher-less entry when a cohort has no teacher recorded.
+ * The heavy cross-schema join lives in the view, so this is one read. Returns
+ * {course, category, teacher}: up to a few teachers per course, or a teacher-less
+ * entry when the course has none. (Category is not resolved; the model is told it
+ * may be null.)
  */
 export async function buildCatalogue(): Promise<CatalogueCourse[]> {
   const db = serverSupabase(); // app schema
 
-  const [{ data: cohortRows }, { data: teacherRows }] = await Promise.all([
-    db.from('cohort').select('id, title'),
-    db.from('teacher').select('id, first_name, last_name'),
-  ]);
+  const { data: rows } = await db.from('course_catalogue').select('base_title, teacher_name');
 
-  const teacherName = new Map<string, string>();
-  for (const t of (teacherRows ?? []) as {
-    id: string;
-    first_name: string | null;
-    last_name: string | null;
-  }[]) {
-    const name = [t.first_name, t.last_name].filter((x) => x && x.trim() !== '').join(' ').trim();
-    if (name !== '') teacherName.set(t.id, name);
+  // The view already deduped (base_title, teacher_name) pairs; group teachers
+  // under each base course here.
+  const byCourse = new Map<string, Set<string>>();
+  for (const r of (rows ?? []) as { base_title: string | null; teacher_name: string | null }[]) {
+    const title = (r.base_title ?? '').trim();
+    if (title === '') continue;
+    if (!byCourse.has(title)) byCourse.set(title, new Set());
+    const name = (r.teacher_name ?? '').trim();
+    if (name !== '') byCourse.get(title)!.add(name);
   }
 
   const catalogue: CatalogueCourse[] = [];
-
-  for (const cohort of (cohortRows ?? []) as { id: string; title: string | null }[]) {
-    if (!cohort.title || cohort.title.trim() === '') continue;
-
-    // The teachers who taught any session of this cohort. A bounded read: a
-    // handful of teachers repeat across a cohort's sessions, so 500 rows is
-    // plenty to find the distinct set without pulling the whole join.
-    const { data: links } = await db
-      .from('class_session_teacher')
-      .select('teacher_id, class_session!inner(cohort_id)')
-      .eq('class_session.cohort_id', cohort.id)
-      .limit(500);
-
-    const ids = new Set<string>();
-    for (const r of (links ?? []) as { teacher_id: string | null }[]) {
-      if (r.teacher_id) ids.add(r.teacher_id);
-    }
-    const names = [...ids]
-      .map((id) => teacherName.get(id))
-      .filter((n): n is string => Boolean(n));
-
-    if (names.length === 0) {
-      catalogue.push({ title: cohort.title.trim(), category: null, teacher: null });
+  for (const [title, teachers] of byCourse) {
+    if (teachers.size === 0) {
+      catalogue.push({ title, category: null, teacher: null });
     } else {
       // At most a few teachers per course so the catalogue stays compact.
-      for (const n of names.slice(0, 3)) {
-        catalogue.push({ title: cohort.title.trim(), category: null, teacher: n });
+      for (const n of [...teachers].slice(0, 3)) {
+        catalogue.push({ title, category: null, teacher: n });
       }
     }
   }
@@ -284,7 +265,9 @@ export async function recommendCourses(
   for (const pick of list as Record<string, unknown>[]) {
     const resolved = resolvePick(pick, catalogue);
     if (!resolved) continue;
-    const key = `${(resolved.teacher_name ?? '').toLowerCase()}|${resolved.course_title.toLowerCase()}`;
+    // One suggestion per course: the same course with a different teacher is
+    // still the same course, so key on the title alone (not teacher+title).
+    const key = resolved.course_title.toLowerCase();
     if (seen.has(key)) continue; // no duplicate course
     seen.add(key);
     out.push({ ...resolved, model: usedModel });

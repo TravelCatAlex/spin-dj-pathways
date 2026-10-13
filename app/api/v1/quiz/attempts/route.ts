@@ -130,6 +130,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     question_id: string;
     option_id: string | null;
     answer_text: string | null;
+    // The wording as the student saw it (migration 0062). Saved on the answer so
+    // the record stays true if the question or option is reworded later.
+    question_prompt: string;
+    option_label: string | null;
   }
 
   const answers: ValidatedAnswer[] = [];
@@ -184,7 +188,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (seenQuestions.has(a.question_id)) continue; // one answer per question
     seenQuestions.add(a.question_id);
 
-    answers.push({ question_id: a.question_id, option_id: optionId, answer_text: text });
+    answers.push({
+      question_id: a.question_id,
+      option_id: optionId,
+      answer_text: text,
+      question_prompt: question.prompt,
+      option_label: optionLabel,
+    });
     // What the model reads: the chosen label and/or the typed note.
     const parts = [optionLabel, text ? `(in their words: ${text})` : null].filter(Boolean);
     answerText.push({ prompt: question.prompt, answer: parts.join(' ') || '(no answer)' });
@@ -221,6 +231,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       question_id: a.question_id,
       option_id: a.option_id,
       answer_text: a.answer_text,
+      question_prompt: a.question_prompt,
+      option_label: a.option_label,
       student_id: student.id,
     })),
   );

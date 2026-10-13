@@ -160,11 +160,42 @@ function useQuizInterests() {
   return interests;
 }
 
+/**
+ * The courses the LLM suggested in the student's latest quiz attempt, shaped for the
+ * "Opportunities to Try" card. Null until they take the quiz, so the card keeps its
+ * default fixture rather than blanking.
+ */
+function useQuizSuggestions() {
+  const [suggestions, setSuggestions] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/v1/students/me/suggestions');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled && (data.suggestions?.length ?? 0) > 0) {
+          setSuggestions(data.suggestions);
+        }
+      } catch {
+        // Keep the default on any failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return suggestions;
+}
+
 export default function StudentHomePage() {
   const router = useRouter();
   const live = useLive();
   const { latest: latestNote, loading: feedbackLoading } = useLatestNote();
   const quizInterests = useQuizInterests();
+  const quizSuggestions = useQuizSuggestions();
 
   return (
     <Stagger trigger="home">
@@ -260,7 +291,10 @@ export default function StudentHomePage() {
           <NextProjectsCard projects={NEXT_PROJECTS} />
         </Reveal>
         <Reveal inView delay={CARD.second}>
-          <OpportunitiesSection opportunities={OPPORTUNITIES} />
+          <OpportunitiesSection
+            opportunities={quizSuggestions ?? OPPORTUNITIES}
+            onSeeAll={() => router.push('/student/quiz')}
+          />
         </Reveal>
         <Reveal inView delay={CARD.third}>
           <JourneySection steps={PATHWAY_JOURNEY} note={JOURNEY_NOTE} />
