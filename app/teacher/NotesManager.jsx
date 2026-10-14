@@ -9,15 +9,16 @@ import { useTeacherLive } from './TeacherShell';
 
 /**
  * One kind of note at a time: `kind` is 'private' or 'public', chosen by the
- * sidebar view. A private note is personal; a public note is about one student
- * from the roster and is the only kind that student will ever see.
+ * sidebar view. A private note is the teacher's own and may optionally name a
+ * student (0063) as a label - the student is never shown it. A public note is about
+ * one student from the roster and is the only kind that student will ever see.
  *
  * NOTHING HERE DECIDES WHO MAY DO WHAT. Every call carries the viewer's JWT and
- * migration 0056's policies answer underneath - author-only writes, and the roster
- * rule on a public note. A refused public note (a student off the roster) comes
- * back as `not_allowed` and is shown, not pre-empted here. The student picker is
- * fed from the roster the shell already loaded, so an addressable student is one
- * the database will also accept.
+ * migrations 0056 and 0063's policies answer underneath - author-only writes, and
+ * the roster rule on any note that names a student. A refused note (a student off
+ * the roster) comes back as `not_allowed` and is shown, not pre-empted here. The
+ * student picker is fed from the roster the shell already loaded, so an
+ * addressable student is one the database will also accept.
  *
  * The "Add note" button is NOT disabled on an empty form, on purpose: a disabled
  * button says nothing about WHY. It is clickable, and a click with nothing typed
@@ -64,6 +65,18 @@ export default function NotesManager({ kind }) {
   // Delete — a two-step inline confirm; `deletingId` drives "Deleting…".
   const [confirmingId, setConfirmingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  // The chosen student's name, for the private-note hint ("…even though it's about X").
+  const selectedStudent = students.find((s) => s.id === studentId);
+  const selectedName = selectedStudent ? (selectedStudent.name ?? selectedStudent.email ?? null) : null;
+
+  // This component is reused across the Private and Public views, so state carries
+  // over when the view changes. A student picked for a public note must not stay
+  // selected and silently tag the next private one.
+  useEffect(() => {
+    setStudentId('');
+    setFormError(null);
+  }, [kind]);
 
   // History — which note's panel is open, and a per-note cache of its revisions.
   const [historyFor, setHistoryFor] = useState(null);
@@ -115,7 +128,9 @@ export default function NotesManager({ kind }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           visibility: kind,
-          student_id: isPublic ? studentId : null,
+          // Optional on a private note (0063), required on a public one - the
+          // check above has already refused an empty public one.
+          student_id: studentId === '' ? null : studentId,
           body,
         }),
       });
@@ -210,7 +225,7 @@ export default function NotesManager({ kind }) {
         <p className="text-sm text-muted">
           {isPublic
             ? 'Shared with the one student each note is about. Only they can see it.'
-            : 'Personal notes, visible only to you.'}
+            : 'Your own notes, visible only to you. You can tag a student so you remember who a note is about.'}
         </p>
       </header>
 
@@ -228,30 +243,41 @@ export default function NotesManager({ kind }) {
         />
 
         <div className="flex flex-wrap items-center gap-3">
-          {isPublic && (
-            <select
-              value={studentId}
-              onChange={(e) => {
-                setStudentId(e.target.value);
-                if (formError) setFormError(null);
-              }}
-              className="min-w-0 flex-1 rounded-[10px] border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-purple max-[480px]:w-full max-[480px]:flex-none"
-            >
-              <option value="">Choose a student…</option>
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.name ?? student.email ?? 'Unnamed student'}
-                </option>
-              ))}
-            </select>
-          )}
+          {/* On BOTH views since 0063. Public: required, and that student reads the
+              note. Private: optional, and only a label for the teacher - the
+              student is never shown it. The list is the roster either way, which
+              the database enforces as well. */}
+          <select
+            value={studentId}
+            onChange={(e) => {
+              setStudentId(e.target.value);
+              if (formError) setFormError(null);
+            }}
+            aria-label={isPublic ? 'Student' : 'Student this note is about (optional)'}
+            className="min-w-0 flex-1 rounded-[10px] border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-purple max-[480px]:w-full max-[480px]:flex-none"
+          >
+            <option value="">{isPublic ? 'Choose a student…' : 'No specific student'}</option>
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {student.name ?? student.email ?? 'Unnamed student'}
+              </option>
+            ))}
+          </select>
 
-          <div className={isPublic ? '' : 'ml-auto'}>
+          <div>
             <Button type="submit" disabled={busy}>
               {busy ? 'Saving…' : 'Add note'}
             </Button>
           </div>
         </div>
+
+        {!isPublic && (
+          <p className="text-xs text-muted">
+            {selectedName
+              ? `Only you can see this note, even though it's about ${selectedName}.`
+              : 'Optionally choose the student this note is about. Only you can see it.'}
+          </p>
+        )}
 
         {isPublic && students.length === 0 && (
           <p className="text-xs text-muted">
@@ -287,7 +313,16 @@ export default function NotesManager({ kind }) {
                   <span className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     <Icon name={isPublic ? 'users' : 'note'} size={13} />
                     <span className="truncate">
-                      {isPublic ? (note.student_name ?? 'student') : 'Private'}
+                      {isPublic
+                        ? (note.student_name ?? 'student')
+                        : note.student_name
+                          ? `Private · ${note.student_name}`
+                          : note.student_id
+                            ? // Tagged, but the student is no longer on the roster, so
+                              // the name is not readable here. Say so, rather than
+                              // showing the note as untagged.
+                              'Private · a student'
+                            : 'Private'}
                     </span>
                   </span>
 
