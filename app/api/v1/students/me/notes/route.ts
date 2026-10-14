@@ -11,8 +11,9 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  * The client carries the viewer's JWT, and `teacher_note_student_select`
  * (migration 0056) is `visibility = 'public' and student_id = current_student_id()`
  * - so a student reads exactly the public notes written to them and nothing else.
- * Private notes cannot appear here: the kind check keeps their student_id null, and
- * null never equals a student id. There is no id to pass and none to tamper with.
+ * Private notes cannot appear here, even one that names this student (0063): the
+ * policy's `visibility = 'public'` excludes every private note whatever its
+ * student_id. There is no id to pass and none to tamper with.
  * ====================================================================================
  *
  * READ-ONLY. A student reads their notes; they do not reply to or edit them. There
@@ -64,8 +65,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const { data: noteRows, error: noteError } = await db
     .from('teacher_note')
     .select('id, author_teacher_id, body, created_at')
-    // Defence in depth: teacher_note_student_select (0058) already excludes
-    // soft-deleted notes, so this is belt-and-braces rather than the boundary.
+    // Defence in depth, and no longer a formality. A private note may now name a
+    // student (0063), so the old guarantee - a private note has no student id and
+    // cannot match - no longer holds. teacher_note_student_select's
+    // `visibility = 'public'` is the boundary; this repeats it so a private note
+    // reaching this route would still be dropped here. Same for soft-deleted rows
+    // (0058).
+    .eq('visibility', 'public')
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 

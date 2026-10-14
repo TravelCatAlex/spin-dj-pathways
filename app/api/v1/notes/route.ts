@@ -5,16 +5,20 @@ import { sessionSupabase } from '../../../lib/supabase-session';
 
 /**
  * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds.
- * POST /api/v1/notes  - create a note (private personal, or public to a student).
+ * POST /api/v1/notes  - create a note (private, optionally naming a student, or
+ *                       public to a student).
  *
  * ============================ NO ID, SAME AS THE ROSTER ============================
- * The client below carries the VIEWER'S OWN JWT, so migration 0056's policies
- * decide everything. On GET, `teacher_note_author_select` returns only the rows
- * this teacher wrote. On POST, `teacher_note_author_insert`'s WITH CHECK refuses
- * any row whose `author_teacher_id` is not this teacher, and any PUBLIC note whose
- * student this teacher did not teach (`app.teaches_student`). A handler that forgot
- * a check would still be unable to write a note it should not - the roster rule is
- * the database's, not this file's.
+ * The client below carries the VIEWER'S OWN JWT, so migrations 0056 and 0063's
+ * policies decide everything. On GET, `teacher_note_author_select` returns only the
+ * rows this teacher wrote. On POST, `teacher_note_author_insert`'s WITH CHECK
+ * refuses any row whose `author_teacher_id` is not this teacher, and any note -
+ * private or public - that names a student this teacher did not teach
+ * (`app.teaches_student`). A handler that forgot a check would still be unable to
+ * write a note it should not - the roster rule is the database's, not this file's.
+ *
+ * A PRIVATE note may name a student (0063) as a label for its author. It is still
+ * read by its author alone: the student's read policy returns public notes only.
  *
  * This is the first WRITE route in the portal. It uses sessionSupabase() (the anon
  * key + the viewer's JWT), never the service-role client in supabase.ts, for
@@ -235,14 +239,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ),
     );
   }
-  if (visibility === 'private' && studentId !== null) {
-    return commit(
-      NextResponse.json(
-        { error: { code: 'bad_request', message: 'A private note has no student.' } },
-        { status: 400 },
-      ),
-    );
-  }
+  // A private note may name a student too (0063) - optional, and only a label for
+  // the author. Whether the student is one this teacher taught is RLS's call below.
 
   const teacher = await teacherId(db);
   if ('error' in teacher) return commit(teacher.error);
@@ -251,7 +249,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .from('teacher_note')
     .insert({
       author_teacher_id: teacher.id,
-      student_id: visibility === 'public' ? studentId : null,
+      student_id: studentId,
       visibility,
       body,
     })
@@ -259,9 +257,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .limit(1);
 
   if (insertError) {
-    // 42501 is the RLS refusal - a public note to a student off the roster, or a
-    // forged author. It is a permission problem, not a server fault, so it reads
-    // as 403 and the code is surfaced for the UI to explain.
+    // 42501 is the RLS refusal - a note naming a student off the roster, or a forged
+    // author. It is a permission problem, not a server fault, so it reads as 403 and
+    // the code is surfaced for the UI to explain.
     const status = insertError.code === '42501' ? 403 : 400;
     return commit(
       NextResponse.json(
@@ -270,7 +268,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             code: insertError.code === '42501' ? 'not_allowed' : 'insert_failed',
             message:
               insertError.code === '42501'
-                ? 'You can only write a public note about a student you have taught.'
+                ? 'You can only write a note about a student you have taught.'
                 : insertError.message,
           },
         },
