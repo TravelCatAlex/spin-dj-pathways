@@ -14,6 +14,7 @@ export default function DashboardLayout({
   onLogout,
   onProfileClick,
   loading = false,
+  navItems,
   children,
 }) {
   return (
@@ -25,6 +26,7 @@ export default function DashboardLayout({
         onTabChange={onTabChange}
         onLogout={onLogout}
         onProfileClick={onProfileClick}
+        navItems={navItems}
       />
       <main className="min-w-0 flex-1 px-[30px] pb-12 pt-[26px] max-[980px]:px-[18px] max-[980px]:pb-10 max-[980px]:pt-[22px]">
         {children}

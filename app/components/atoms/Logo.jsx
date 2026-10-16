@@ -13,6 +13,12 @@ import { useImageLoaded } from '../../lib/useImageLoaded';
  * The wrapper reserves that exact ratio up front, so the skeleton occupies
  * the wordmark's final footprint and the sidebar does not jolt when the real
  * thing arrives.
+ *
+ * `width` is a request, not a floor. `max-w-full` caps the wrapper at whatever
+ * the parent actually offers, and `aspect-ratio` recomputes the height from the
+ * used width — so a 260px wordmark inside a 224px card narrows instead of
+ * spilling out of it. Without that ceiling the inline width wins and the page
+ * grows a horizontal scrollbar on a 320px phone.
  */
 export default function Logo({ width = 150, priority = false, className = '' }) {
   const { loaded, holderRef, imgProps } = useImageLoaded();
@@ -20,7 +26,7 @@ export default function Logo({ width = 150, priority = false, className = '' }) 
   return (
     <span
       ref={holderRef}
-      className={`relative block overflow-hidden ${className}`}
+      className={`relative block max-w-full overflow-hidden ${className}`}
       style={{ width, aspectRatio: `${LOGO.width} / ${LOGO.height}` }}
     >
       {!loaded && <Skeleton tone="light" rounded="rounded-[6px]" />}

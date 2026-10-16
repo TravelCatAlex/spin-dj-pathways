@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * The server-side Supabase client.
@@ -11,25 +11,42 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  *
  * That key bypasses RLS entirely. It must never reach the browser: no
  * NEXT_PUBLIC_ prefix, and nothing that imports this file may be a client
- * component. When the portal gains real sign-in, the per-student policies move
- * to the database and this client is replaced by the user's own session - at
- * which point the route stops being able to read anybody else's rows even by
- * mistake, which is the actual protection.
+ * component.
+ *
+ * HALF OF THAT HAS NOW HAPPENED, and the half that has not is the point of this
+ * note. Migration 0053 put per-student policies in the database and the
+ * dashboard moved to `/students/me`, which reads through the viewer's own
+ * session - see supabase-session.ts. That route can no longer read anybody
+ * else's rows even by mistake, which is the actual protection.
+ *
+ * `app/api/v1/uploads` still uses this client. It takes a `studentId` from the
+ * caller and asks nobody who they are, so anyone can list or write another
+ * student's creations by naming them. It is the remaining hole, it is not new,
+ * and it is recorded in the file's own header. Closing it is the same change
+ * made twice: the viewer's session instead of the caller's word.
  *
  * It fails closed. A missing variable throws here rather than producing a
  * client that returns empty results, because "no rows" and "not configured"
  * look identical to a caller and only one of them is a bug.
  */
 /**
- * The schema is part of the client's TYPE, not just its configuration.
- * `SupabaseClient` on its own means `'public'`, so naming it here is what makes
- * a route that reaches for a mirror table fail at build rather than at runtime.
+ * The client's type is DERIVED from the call below, never written out.
+ *
+ * `SupabaseClient` defaults its schema parameter to `public`, so annotating the
+ * cache with the bare type rejects the `app` client this file now builds:
+ *
+ *   Type 'SupabaseClient<any, any, "app", ...>' is not assignable to
+ *   type 'SupabaseClient<any, "public", "public", ...>'
+ *
+ * The honest fix is not to spell five generic parameters out here - they have
+ * changed shape between supabase-js versions and would be a yearly chore - but
+ * to let the factory below be the single statement of what this client is.
  */
-type ServerClient = SupabaseClient<any, any, 'app'>;
+type PortalClient = ReturnType<typeof build>;
 
-let cached: ServerClient | null = null;
+let cached: PortalClient | null = null;
 
-export function serverSupabase(): ServerClient {
+export function serverSupabase(): PortalClient {
   if (cached !== null) return cached;
 
   const url = process.env.SUPABASE_URL;
@@ -46,24 +63,44 @@ export function serverSupabase(): ServerClient {
     );
   }
 
-  cached = createClient(url as string, key as string, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    // THE PORTAL'S TABLES LIVE IN `app`, NOT `public` (migration 0048).
-    //
-    // `public` is the WellnessLiving mirror the sync owns - person, session,
-    // purchase, pay_transaction, raw_wl. `app` is the thirteen tables this
-    // portal reads, and the split exists so that exposing one to PostgREST does
-    // not expose the other.
-    //
-    // Set here rather than per call: `.from('student')` in a route resolves
-    // against this default, so a route that forgets cannot silently read the
-    // wrong schema. A route that genuinely needs the mirror asks for it by
-    // name, with `.schema('public')`.
-    //
-    // Supabase must also list `app` under Settings -> API -> Exposed schemas.
-    // Without that PostgREST does not see the schema at all and every query
-    // here returns PGRST106, not an empty result.
-    db: { schema: 'app' },
-  });
+  cached = build(url as string, key as string);
   return cached;
+}
+
+/**
+ * The one place that says what this client is. See `PortalClient` above.
+ */
+function build(url: string, key: string) {
+  return createClient(url, key, {
+    // THE PORTAL'S TABLES LIVE IN `app`, NOT `public`, AND THIS LINE IS WHY THE
+    // DASHBOARD WAS SHOWING FIXTURES.
+    //
+    // Migration 0047 moved the eleven portal-owned tables into their own schema
+    // so that exposing the portal would not expose `purchase`, `pay_transaction`
+    // and `raw_wl` beside them. supabase-js defaults to `public`, and nothing
+    // here said otherwise, so every `.from('student')` and `.from('creation')`
+    // asked PostgREST for a table that does not exist:
+    //
+    //   404 PGRST205  "Could not find the table 'public.student'"
+    //
+    // Measured 8 Oct 2026: all thirteen relations the portal reads - student,
+    // identity, class_session, attendance_record, class_session_teacher, cohort,
+    // teacher, creation, organization and the link tables - are in `app`, and
+    // NONE of them exists in `public`. So the default belongs here, once, rather
+    // than as a `.schema('app')` that each new query has to remember.
+    //
+    // The route handlers never surfaced this. `live-data.js` treats a failed
+    // fetch as "fall back to fixtures", so a broken query and a slow one look
+    // identical on screen - which is the masquerade that file's own header warns
+    // about.
+    //
+    // THE TRADE: a query against the WellnessLiving mirror - `person`,
+    // `purchase`, `session`, `sync_*`, all still in `public` - must now say
+    // `.schema('public')` explicitly. That is the correct way round. The portal
+    // is specified to read the hub and never to learn that WellnessLiving
+    // exists, so reaching into the mirror should be the thing that looks
+    // unusual at the call site.
+    db: { schema: 'app' },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

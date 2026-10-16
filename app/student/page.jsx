@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import Stagger from '../components/molecules/Stagger';
@@ -81,9 +82,120 @@ const TRIPLET =
  * exactly like a working one, which is the confusion the whole exercise is
  * meant to end.
  */
+/**
+ * The most recent note a teacher has shared, shaped for the Coach's Feedback
+ * card. `/api/v1/students/me/notes` groups by teacher, newest-first, and the
+ * first teacher's first note is the most recent overall (the route orders every
+ * note by created_at desc before grouping). Null until one arrives, so the card
+ * keeps its fixture until there is a real note to show rather than blanking.
+ */
+function useLatestNote() {
+  const [latest, setLatest] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch('/api/v1/students/me/notes');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (cancelled) return;
+
+        const note = data.teachers?.[0]?.notes?.[0];
+        if (!note) return;
+
+        setLatest({
+          coach: data.teachers[0].teacher_name ?? 'Your teacher',
+          coachAvatarUrl: null,
+          date: new Date(note.created_at).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+          message: note.body,
+        });
+      } catch {
+        // Leave the fixture in place - a failed fetch must not blank the card.
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { latest, loading };
+}
+
+/**
+ * The student's interests, derived from their latest quiz attempt. Empty until
+ * they take the quiz, in which case the card keeps its default fixture.
+ */
+function useQuizInterests() {
+  const [interests, setInterests] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/v1/students/me/interests');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled && (data.interests?.length ?? 0) > 0) {
+          setInterests(data.interests);
+        }
+      } catch {
+        // Keep the default on any failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return interests;
+}
+
+/**
+ * The courses the LLM suggested in the student's latest quiz attempt, shaped for the
+ * "Opportunities to Try" card. Null until they take the quiz, so the card keeps its
+ * default fixture rather than blanking.
+ */
+function useQuizSuggestions() {
+  const [suggestions, setSuggestions] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch('/api/v1/students/me/suggestions');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled && (data.suggestions?.length ?? 0) > 0) {
+          setSuggestions(data.suggestions);
+        }
+      } catch {
+        // Keep the default on any failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return suggestions;
+}
+
 export default function StudentHomePage() {
   const router = useRouter();
   const live = useLive();
+  const { latest: latestNote, loading: feedbackLoading } = useLatestNote();
+  const quizInterests = useQuizInterests();
+  const quizSuggestions = useQuizSuggestions();
 
   return (
     <Stagger trigger="home">
@@ -154,13 +266,20 @@ export default function StudentHomePage() {
           cards of different lengths stay the same height. */}
       <div className={TRIPLET}>
         <Reveal inView delay={CARD.first}>
-          <InterestsCard interests={INTERESTS} />
+          <InterestsCard
+            interests={quizInterests ?? INTERESTS}
+            onEdit={() => router.push('/student/quiz')}
+          />
         </Reveal>
         <Reveal inView delay={CARD.second}>
           <ProgressCard items={PROGRESS_ITEMS} />
         </Reveal>
         <Reveal inView delay={CARD.third}>
-          <FeedbackCard feedback={LATEST_FEEDBACK} />
+          <FeedbackCard
+            feedback={latestNote ?? LATEST_FEEDBACK}
+            loading={feedbackLoading}
+            onSeeAll={() => router.push('/student/notes')}
+          />
         </Reveal>
       </div>
 
@@ -172,7 +291,10 @@ export default function StudentHomePage() {
           <NextProjectsCard projects={NEXT_PROJECTS} />
         </Reveal>
         <Reveal inView delay={CARD.second}>
-          <OpportunitiesSection opportunities={OPPORTUNITIES} />
+          <OpportunitiesSection
+            opportunities={quizSuggestions ?? OPPORTUNITIES}
+            onSeeAll={() => router.push('/student/quiz')}
+          />
         </Reveal>
         <Reveal inView delay={CARD.third}>
           <JourneySection steps={PATHWAY_JOURNEY} note={JOURNEY_NOTE} />

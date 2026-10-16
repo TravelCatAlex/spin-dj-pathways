@@ -188,6 +188,7 @@ Fixture: `CREATIONS`
 | Method | Path | Purpose | UI section |
 | --- | --- | --- | --- |
 | `GET` | `/api/v1/students/me/opportunities?limit=4` | Upcoming events/roles the student can opt into | 11. Upcoming Opportunities |
+| `GET` | `/api/v1/students/me/suggestions` | The LLM-suggested courses from the student's latest quiz attempt, best-fit first. Implemented; populates the **Opportunities to Try** card (falls back to the fixture until the quiz is taken) | 11. Opportunities to Try |
 | `GET` | `/api/v1/opportunities?page=` | Full list behind **View All** and the **Events** tab | 11. CTA, sidebar nav |
 | `POST` | `/api/v1/opportunities/{opportunityId}/interest` | Register interest — the **I'm Interested** button | 11. Row CTA |
 | `DELETE` | `/api/v1/opportunities/{opportunityId}/interest` | Withdraw interest (button is a toggle) | 11. Row CTA |
