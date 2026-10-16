@@ -102,5 +102,21 @@ function build(url: string, key: string) {
     // unusual at the call site.
     db: { schema: 'app' },
     auth: { persistSession: false, autoRefreshToken: false },
+    // THE PORTAL'S TABLES LIVE IN `app`, NOT `public` (migration 0048).
+    //
+    // `public` is the WellnessLiving mirror the sync owns - person, session,
+    // purchase, pay_transaction, raw_wl. `app` is the thirteen tables this
+    // portal reads, and the split exists so that exposing one to PostgREST does
+    // not expose the other.
+    //
+    // Set here rather than per call: `.from('student')` in a route resolves
+    // against this default, so a route that forgets cannot silently read the
+    // wrong schema. A route that genuinely needs the mirror asks for it by
+    // name, with `.schema('public')`.
+    //
+    // Supabase must also list `app` under Settings -> API -> Exposed schemas.
+    // Without that PostgREST does not see the schema at all and every query
+    // here returns PGRST106, not an empty result.
+    db: { schema: 'app' },
   });
 }
