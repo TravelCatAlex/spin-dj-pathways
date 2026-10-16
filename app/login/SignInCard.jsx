@@ -39,6 +39,12 @@ const UNREACHABLE = 'Could not reach the server. Check your connection and try a
 /** Said on the code stage when the send was skipped deliberately. */
 const DEV_READY = 'Enter the code from the dev-otp script.';
 
+/** Said while the dev-otp route is fetching the token. */
+const DEV_FETCHING = 'Fetching code…';
+
+/** Said after the token is autofilled. */
+const DEV_FILLED = 'Code autofilled — press Sign in.';
+
 /**
  * A DEV-ONLY shortcut to the code field that does NOT send an email.
  *
@@ -99,13 +105,33 @@ export default function SignInCard({ next }) {
   }
 
   // DEV ONLY. Reach the code field without sending an email - see DEV_OTP_ENTRY.
-  // The email is still required: /auth/verify reads it, and it must match the
-  // address the dev-otp script minted the code for.
-  function skipToCode() {
+  // Calls /auth/dev-otp to generate a real OTP via the admin API and autofills
+  // it so the developer never has to open their inbox.
+  async function skipToCode() {
     if (email.trim() === '') return;
     setError(null);
-    setNotice(DEV_READY);
+    setBusy(true);
+    setNotice(DEV_FETCHING);
     setStage('code');
+
+    try {
+      const res = await fetch('/auth/dev-otp', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.token) {
+        setCode(json.token);
+        setNotice(DEV_FILLED);
+      } else {
+        setNotice(DEV_READY);
+      }
+    } catch {
+      setNotice(DEV_READY);
+    }
+
+    setBusy(false);
     requestAnimationFrame(() => codeRef.current?.focus());
   }
 
