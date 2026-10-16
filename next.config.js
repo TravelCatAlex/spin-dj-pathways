@@ -24,6 +24,9 @@ function storageHostPatterns() {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow LAN access from other devices on the same network (dev only).
+  allowedDevOrigins: ['192.168.0.110'],
+
   // Next 16 writes AGENTS.md and CLAUDE.md at the repo root on every dev run.
   // This project keeps its own docs, so the generated pair is just untracked
   // noise — turn the generation off rather than gitignore files that would
