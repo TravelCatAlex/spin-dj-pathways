@@ -4,7 +4,10 @@ import type { NextRequest } from 'next/server';
 import { sessionSupabase } from '../../../lib/supabase-session';
 
 /**
- * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds.
+ * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, merged
+ *                       newest first with the WellnessLiving profile notes of the
+ *                       students they teach (0065, read-only, `source:
+ *                       'wellnessliving'`).
  * POST /api/v1/notes  - create a note (private, optionally naming a student, or
  *                       public to a student).
  *
@@ -31,6 +34,26 @@ interface NoteRow {
   id: string;
   visibility: 'private' | 'public';
   student_id: string | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One row of `app.my_students_wl_notes()` (migration 0065). */
+interface WlNoteRow {
+  student_id: string;
+  student_name: string | null;
+  note_text: string;
+  note_seen_at: string;
+}
+
+/** A note as the teacher's tab receives it - their own, or a student's WL note. */
+interface NoteOut {
+  id: string;
+  source: 'teacher' | 'wellnessliving';
+  visibility: 'private' | 'public';
+  student_id: string | null;
+  student_name: string | null;
   body: string;
   created_at: string;
   updated_at: string;
@@ -152,19 +175,56 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]),
   );
 
-  return commit(
-    NextResponse.json({
-      notes: notes.map((n) => ({
-        id: n.id,
-        visibility: n.visibility,
-        student_id: n.student_id,
-        student_name: n.student_id === null ? null : (nameById.get(n.student_id) ?? null),
-        body: n.body,
-        created_at: n.created_at,
-        updated_at: n.updated_at,
-      })),
-    }),
+  // The WellnessLiving profile notes of this teacher's students (migration 0065).
+  // `app.my_students_wl_notes()` is SECURITY DEFINER and answers from the JWT
+  // alone: only students this teacher teaches, plain text only. The table under
+  // it has no policy, so this function is the only way these rows reach a teacher.
+  const { data: wlRows, error: wlError } = await db.rpc('my_students_wl_notes');
+
+  if (wlError) {
+    return commit(
+      NextResponse.json(
+        { error: { code: 'query_failed', message: wlError.message } },
+        { status: 500 },
+      ),
+    );
+  }
+
+  const own: NoteOut[] = notes.map((n) => ({
+    id: n.id,
+    source: 'teacher',
+    visibility: n.visibility,
+    student_id: n.student_id,
+    student_name: n.student_id === null ? null : (nameById.get(n.student_id) ?? null),
+    body: n.body,
+    created_at: n.created_at,
+    updated_at: n.updated_at,
+  }));
+
+  // Shown with the public notes: since 0065 the student reads their own WL note
+  // too, so "shared with the one student it is about" is exactly true of it.
+  // READ-ONLY - no route edits or deletes one; WellnessLiving is its source.
+  // `created_at` carries note_seen_at - when the sync first saw the note, since WL
+  // gives no written date - so the merged list sorts on one field; `source` tells
+  // the tab to label it "seen", never as the date it was written.
+  const fromWl: NoteOut[] = ((wlRows ?? []) as WlNoteRow[]).map((w) => ({
+    id: `wl:${w.student_id}`,
+    source: 'wellnessliving',
+    visibility: 'public',
+    student_id: w.student_id,
+    student_name: w.student_name,
+    body: w.note_text,
+    created_at: w.note_seen_at,
+    updated_at: w.note_seen_at,
+  }));
+
+  // Newest first across both sources. Parsed, not compared as strings: the two
+  // sources' timestamps need not share an offset format.
+  const merged = [...own, ...fromWl].sort(
+    (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
   );
+
+  return commit(NextResponse.json({ notes: merged }));
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

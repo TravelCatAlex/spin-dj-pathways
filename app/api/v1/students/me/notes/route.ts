@@ -18,6 +18,12 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  *
  * READ-ONLY. A student reads their notes; they do not reply to or edit them. There
  * is no write policy a student could reach, and no POST here.
+ *
+ * THE STUDIO'S NOTE (0065). The student's own WellnessLiving profile note, written
+ * by studio staff, comes back as one more group: `source: 'wellnessliving'`,
+ * `teacher_id: null`. `app.my_wl_note()` is SECURITY DEFINER and keyed on
+ * current_student_id() - the caller's own note, never another's, plain text only.
+ * Its date is when the sync first saw the note; WL does not say when it was written.
  */
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +32,20 @@ interface NoteRow {
   author_teacher_id: string;
   body: string;
   created_at: string;
+}
+
+/** One row of `app.my_wl_note()` (migration 0065). */
+interface WlNoteRow {
+  note_text: string;
+  note_seen_at: string;
+}
+
+/** A teacher's notes to this student, or the studio's WellnessLiving note. */
+interface NoteGroup {
+  teacher_id: string | null;
+  source: 'teacher' | 'wellnessliving';
+  teacher_name: string | null;
+  notes: { id: string; body: string; created_at: string }[];
 }
 
 interface TeacherNameRow {
@@ -124,13 +144,39 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
   }
 
-  return commit(
-    NextResponse.json({
-      teachers: order.map((teacherId) => ({
-        teacher_id: teacherId,
-        teacher_name: nameById.get(teacherId) ?? null,
-        notes: byTeacher.get(teacherId) ?? [],
-      })),
-    }),
-  );
+  const groups: NoteGroup[] = order.map((teacherId) => ({
+    teacher_id: teacherId,
+    source: 'teacher',
+    teacher_name: nameById.get(teacherId) ?? null,
+    notes: byTeacher.get(teacherId) ?? [],
+  }));
+
+  // The studio's note about this student (0065) - at most one row.
+  const { data: wlRows, error: wlError } = await db.rpc('my_wl_note');
+
+  if (wlError) {
+    return commit(
+      NextResponse.json(
+        { error: { code: 'query_failed', message: wlError.message } },
+        { status: 500 },
+      ),
+    );
+  }
+
+  const wl = ((wlRows ?? []) as WlNoteRow[])[0];
+  if (wl !== undefined) {
+    const studio: NoteGroup = {
+      teacher_id: null,
+      source: 'wellnessliving',
+      teacher_name: null,
+      notes: [{ id: 'wl', body: wl.note_text, created_at: wl.note_seen_at }],
+    };
+    // Groups are ordered by their newest note, so the studio's note goes before
+    // the first group whose newest note is older than it was seen.
+    const seen = Date.parse(wl.note_seen_at);
+    const at = groups.findIndex((g) => Date.parse(g.notes[0]?.created_at ?? '') < seen);
+    groups.splice(at === -1 ? groups.length : at, 0, studio);
+  }
+
+  return commit(NextResponse.json({ teachers: groups }));
 }
