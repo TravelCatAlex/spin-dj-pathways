@@ -329,7 +329,9 @@ export default function NotesManager({ kind }) {
                       · From WellnessLiving
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                  {/* Trimmed: a note's own line breaks stay, a blank line before
+                      or after it does not. */}
+                  <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
                   <p className="mt-2 text-xs text-muted">
                     Edit it in WellnessLiving
                   </p>
@@ -420,7 +422,7 @@ export default function NotesManager({ kind }) {
                   </div>
                 ) : (
                   <>
-                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
 
                     {confirming ? (
                       <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-rose-50 px-3 py-2">

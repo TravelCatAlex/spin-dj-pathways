@@ -98,7 +98,11 @@ export default function StudentNotesPage() {
                     <ul className="flex flex-col gap-3">
                       {teacher.notes.map((note) => (
                         <li key={note.id} className="rounded-lg border border-line p-3">
-                          <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                          {/* Trimmed: only the line breaks INSIDE a note are kept, never a
+                              blank line before or after it. */}
+                          <p className="whitespace-pre-wrap text-sm text-ink">
+                            {note.body?.trim()}
+                          </p>
                           {!fromStudio && (
                             <p className="mt-2 text-xs text-muted">
                               {formatWhen(note.created_at)}

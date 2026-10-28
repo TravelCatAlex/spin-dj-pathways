@@ -117,7 +117,7 @@ function useLatestNote() {
             day: 'numeric',
             year: 'numeric',
           }),
-          message: note.body,
+          message: note.body?.trim(),
         });
       } catch {
         // Leave the fixture in place - a failed fetch must not blank the card.
