@@ -105,7 +105,7 @@ function useLatestNote() {
 
         // A teacher's note only: the studio's WellnessLiving note has no coach
         // and no date (0066).
-        const group = data.teachers?.find((t) => t.source !== 'wellnessliving');
+        const group = data.teachers?.find((t) => t.from_wellness !== true);
         const note = group?.notes?.[0];
         if (!note) return;
 

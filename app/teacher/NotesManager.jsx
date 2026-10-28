@@ -14,8 +14,8 @@ import { useTeacherLive } from './TeacherShell';
  * one student from the roster and is the only kind that student will ever see.
  *
  * The Public view also lists each roster student's WellnessLiving profile note
- * (`source: 'wellnessliving'`, migration 0065) - the student sees that one too.
- * Read-only, and dated "seen", because WL gives no date it was written.
+ * (`from_wellness: true`, migrations 0067/0068) - the student sees that one too.
+ * Read-only and undated, because WL gives no date it was written.
  *
  * NOTHING HERE DECIDES WHO MAY DO WHAT. Every call carries the viewer's JWT and
  * migrations 0056 and 0063's policies answer underneath - author-only writes, and
@@ -314,7 +314,7 @@ export default function NotesManager({ kind }) {
             // on the private tab. Read-only: WL is its
             // source, so there is no Edit, Delete or history here, and no date -
             // WL does not say when it was written (0066).
-            const fromWl = note.source === 'wellnessliving';
+            const fromWl = note.from_wellness === true;
 
             if (fromWl) {
               return (
@@ -326,7 +326,7 @@ export default function NotesManager({ kind }) {
                       {note.visibility === 'private'
                         ? 'Your profile'
                         : (note.student_name ?? 'student')}{' '}
-                      · From WellnessLiving
+                      · From WellnessLiving profile
                     </span>
                   </div>
                   {/* Trimmed: a note's own line breaks stay, a blank line before

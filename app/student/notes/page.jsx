@@ -83,9 +83,9 @@ export default function StudentNotesPage() {
           {state.status === 'ready' && state.teachers.length > 0 && (
             <div className="flex flex-col gap-6">
               {state.teachers.map((teacher) => {
-                // The studio's note from WellnessLiving (0065). No date - WL does
-                // not say when it was written (0066).
-                const fromStudio = teacher.source === 'wellnessliving';
+                // Notes from the student's WellnessLiving profile (`from_wellness`,
+                // only ever true). No date - WL does not say when it was written.
+                const fromStudio = teacher.from_wellness === true;
                 return (
                   <section
                     key={teacher.teacher_id ?? 'wellnessliving'}
@@ -93,7 +93,9 @@ export default function StudentNotesPage() {
                   >
                     <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
                       <Icon name="note" size={14} />
-                      {fromStudio ? 'From the studio' : (teacher.teacher_name ?? 'Your teacher')}
+                      {fromStudio
+                        ? 'From your WellnessLiving profile'
+                        : (teacher.teacher_name ?? 'Your teacher')}
                     </h2>
                     <ul className="flex flex-col gap-3">
                       {teacher.notes.map((note) => (

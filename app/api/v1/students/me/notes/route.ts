@@ -22,9 +22,9 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  * THE STUDIO'S NOTE (0067). The student's own WellnessLiving profile note, written
  * by studio staff, is a public teacher_note to them with NO author - the database
  * allows a null author only on a WL-linked note - so the same query returns it,
- * and it comes back as one more group: `source: 'wellnessliving'`,
- * `teacher_id: null`. It has no date (0066): WL does not say when it was written.
- * It comes last.
+ * and it comes back as one more group, `teacher_id: null` and `from_wellness: true`
+ * on the group and on each of its notes. Nothing else carries the flag. It has no
+ * date (0066): WL does not say when it was written. It comes last.
  */
 export const dynamic = 'force-dynamic';
 
@@ -39,10 +39,15 @@ interface NoteRow {
 /** A teacher's notes to this student, or the studio's WellnessLiving note. */
 interface NoteGroup {
   teacher_id: string | null;
-  source: 'teacher' | 'wellnessliving';
+  /**
+   * Present, and true, only on the group of notes from the student's own
+   * WellnessLiving profile - on the group and on each of its notes. A teacher's
+   * group and notes carry no flag.
+   */
+  from_wellness?: true;
   teacher_name: string | null;
-  /** `created_at` is null for the studio's note: WL gives no date (0066). */
-  notes: { id: string; body: string; created_at: string | null }[];
+  /** `created_at` is null for a WellnessLiving note: WL gives no date (0066). */
+  notes: { id: string; body: string; created_at: string | null; from_wellness?: true }[];
 }
 
 interface TeacherNameRow {
@@ -148,7 +153,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const groups: NoteGroup[] = order.map((teacherId) => ({
     teacher_id: teacherId,
-    source: 'teacher',
     teacher_name: nameById.get(teacherId) ?? null,
     notes: byTeacher.get(teacherId) ?? [],
   }));
@@ -184,11 +188,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     groups.push({
       teacher_id: null,
-      source: 'wellnessliving',
+      from_wellness: true,
       teacher_name: null,
       notes: [...studioNotes]
         .sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0))
-        .map((n) => ({ id: n.id, body: n.body, created_at: null })),
+        .map((n) => ({ id: n.id, body: n.body, created_at: null, from_wellness: true as const })),
     });
   }
 

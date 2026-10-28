@@ -7,7 +7,7 @@ import { sessionSupabase } from '../../../lib/supabase-session';
  * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, newest
  *                       first, followed by the WellnessLiving notes they may read:
  *                       their students' and their own WL profile note (0067,
- *                       read-only, `source: 'wellnessliving'`, no date - 0066).
+ *                       read-only, `from_wellness: true`, no date - 0066).
  * POST /api/v1/notes  - create a note (private, optionally naming a student, or
  *                       public to a student).
  *
@@ -43,7 +43,11 @@ interface NoteRow {
 /** A note as the teacher's tab receives it - their own, or a student's WL note. */
 interface NoteOut {
   id: string;
-  source: 'teacher' | 'wellnessliving';
+  /**
+   * Present, and true, only on a note copied from the student's (or this
+   * teacher's own) WellnessLiving profile. A note a teacher wrote has no flag.
+   */
+  from_wellness?: true;
   visibility: 'private' | 'public';
   student_id: string | null;
   student_name: string | null;
@@ -197,7 +201,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const toOut = (n: NoteRow, fromWl: boolean): NoteOut => ({
     id: n.id,
-    source: fromWl ? 'wellnessliving' : 'teacher',
+    ...(fromWl ? { from_wellness: true as const } : {}),
     visibility: n.visibility,
     student_id: n.student_id,
     student_name: n.student_id === null ? null : (nameById.get(n.student_id) ?? null),
