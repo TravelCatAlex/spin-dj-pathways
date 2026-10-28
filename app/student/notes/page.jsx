@@ -83,8 +83,8 @@ export default function StudentNotesPage() {
           {state.status === 'ready' && state.teachers.length > 0 && (
             <div className="flex flex-col gap-6">
               {state.teachers.map((teacher) => {
-                // The studio's note from WellnessLiving (0065): its date is when it
-                // was first seen, not when it was written - WL does not say.
+                // The studio's note from WellnessLiving (0065). No date - WL does
+                // not say when it was written (0066).
                 const fromStudio = teacher.source === 'wellnessliving';
                 return (
                   <section
@@ -99,10 +99,11 @@ export default function StudentNotesPage() {
                       {teacher.notes.map((note) => (
                         <li key={note.id} className="rounded-lg border border-line p-3">
                           <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
-                          <p className="mt-2 text-xs text-muted">
-                            {fromStudio ? 'As of ' : ''}
-                            {formatWhen(note.created_at)}
-                          </p>
+                          {!fromStudio && (
+                            <p className="mt-2 text-xs text-muted">
+                              {formatWhen(note.created_at)}
+                            </p>
+                          )}
                         </li>
                       ))}
                     </ul>

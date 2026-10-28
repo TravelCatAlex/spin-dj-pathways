@@ -23,7 +23,7 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  * by studio staff, comes back as one more group: `source: 'wellnessliving'`,
  * `teacher_id: null`. `app.my_wl_note()` is SECURITY DEFINER and keyed on
  * current_student_id() - the caller's own note, never another's, plain text only.
- * Its date is when the sync first saw the note; WL does not say when it was written.
+ * It has no date (0066): WL does not say when it was written. It comes last.
  */
 export const dynamic = 'force-dynamic';
 
@@ -34,10 +34,9 @@ interface NoteRow {
   created_at: string;
 }
 
-/** One row of `app.my_wl_note()` (migration 0065). */
+/** One row of `app.my_wl_note()` (migration 0066). */
 interface WlNoteRow {
   note_text: string;
-  note_seen_at: string;
 }
 
 /** A teacher's notes to this student, or the studio's WellnessLiving note. */
@@ -45,7 +44,8 @@ interface NoteGroup {
   teacher_id: string | null;
   source: 'teacher' | 'wellnessliving';
   teacher_name: string | null;
-  notes: { id: string; body: string; created_at: string }[];
+  /** `created_at` is null for the studio's note: WL gives no date (0066). */
+  notes: { id: string; body: string; created_at: string | null }[];
 }
 
 interface TeacherNameRow {
@@ -165,17 +165,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const wl = ((wlRows ?? []) as WlNoteRow[])[0];
   if (wl !== undefined) {
-    const studio: NoteGroup = {
+    // Undated, so it cannot be placed among the teachers' groups by date; it goes
+    // last, which also keeps `teachers[0]` a teacher for the dashboard card.
+    groups.push({
       teacher_id: null,
       source: 'wellnessliving',
       teacher_name: null,
-      notes: [{ id: 'wl', body: wl.note_text, created_at: wl.note_seen_at }],
-    };
-    // Groups are ordered by their newest note, so the studio's note goes before
-    // the first group whose newest note is older than it was seen.
-    const seen = Date.parse(wl.note_seen_at);
-    const at = groups.findIndex((g) => Date.parse(g.notes[0]?.created_at ?? '') < seen);
-    groups.splice(at === -1 ? groups.length : at, 0, studio);
+      notes: [{ id: 'wl', body: wl.note_text, created_at: null }],
+    });
   }
 
   return commit(NextResponse.json({ teachers: groups }));

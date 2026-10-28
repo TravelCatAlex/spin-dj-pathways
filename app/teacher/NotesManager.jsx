@@ -311,8 +311,8 @@ export default function NotesManager({ kind }) {
             const editing = editingId === note.id;
             const confirming = confirmingId === note.id;
             // The student's WellnessLiving profile note (0065). Read-only: WL is its
-            // source, so there is no Edit, Delete or history here, and its date is
-            // when the sync first saw it - WL does not say when it was written.
+            // source, so there is no Edit, Delete or history here, and no date -
+            // WL does not say when it was written (0066).
             const fromWl = note.source === 'wellnessliving';
 
             if (fromWl) {
@@ -326,7 +326,7 @@ export default function NotesManager({ kind }) {
                   </div>
                   <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
                   <p className="mt-2 text-xs text-muted">
-                    seen {formatWhen(note.created_at)} · edit it in WellnessLiving
+                    Edit it in WellnessLiving
                   </p>
                 </li>
               );

@@ -4,10 +4,10 @@ import type { NextRequest } from 'next/server';
 import { sessionSupabase } from '../../../lib/supabase-session';
 
 /**
- * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, merged
- *                       newest first with the WellnessLiving profile notes of the
+ * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, newest
+ *                       first, followed by the WellnessLiving profile notes of the
  *                       students they teach (0065, read-only, `source:
- *                       'wellnessliving'`).
+ *                       'wellnessliving'`, no date - 0066).
  * POST /api/v1/notes  - create a note (private, optionally naming a student, or
  *                       public to a student).
  *
@@ -39,12 +39,11 @@ interface NoteRow {
   updated_at: string;
 }
 
-/** One row of `app.my_students_wl_notes()` (migration 0065). */
+/** One row of `app.my_students_wl_notes()` (migration 0066). */
 interface WlNoteRow {
   student_id: string;
   student_name: string | null;
   note_text: string;
-  note_seen_at: string;
 }
 
 /** A note as the teacher's tab receives it - their own, or a student's WL note. */
@@ -55,8 +54,9 @@ interface NoteOut {
   student_id: string | null;
   student_name: string | null;
   body: string;
-  created_at: string;
-  updated_at: string;
+  /** Null for a WellnessLiving note: WL gives no date (0066). */
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface StudentNameRow {
@@ -204,9 +204,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // Shown with the public notes: since 0065 the student reads their own WL note
   // too, so "shared with the one student it is about" is exactly true of it.
   // READ-ONLY - no route edits or deletes one; WellnessLiving is its source.
-  // `created_at` carries note_seen_at - when the sync first saw the note, since WL
-  // gives no written date - so the merged list sorts on one field; `source` tells
-  // the tab to label it "seen", never as the date it was written.
+  // No date: WL gives none, and 0066 dropped the "first seen by the sync" stand-in
+  // because it read like a written date. So these cannot sort among the teacher's
+  // own notes; they follow them, in the function's order (student name).
   const fromWl: NoteOut[] = ((wlRows ?? []) as WlNoteRow[]).map((w) => ({
     id: `wl:${w.student_id}`,
     source: 'wellnessliving',
@@ -214,17 +214,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     student_id: w.student_id,
     student_name: w.student_name,
     body: w.note_text,
-    created_at: w.note_seen_at,
-    updated_at: w.note_seen_at,
+    created_at: null,
+    updated_at: null,
   }));
 
-  // Newest first across both sources. Parsed, not compared as strings: the two
-  // sources' timestamps need not share an offset format.
-  const merged = [...own, ...fromWl].sort(
-    (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
-  );
-
-  return commit(NextResponse.json({ notes: merged }));
+  // `own` is already newest first from the query.
+  return commit(NextResponse.json({ notes: [...own, ...fromWl] }));
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
