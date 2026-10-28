@@ -19,24 +19,21 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  * READ-ONLY. A student reads their notes; they do not reply to or edit them. There
  * is no write policy a student could reach, and no POST here.
  *
- * THE STUDIO'S NOTE (0065). The student's own WellnessLiving profile note, written
- * by studio staff, comes back as one more group: `source: 'wellnessliving'`,
- * `teacher_id: null`. `app.my_wl_note()` is SECURITY DEFINER and keyed on
- * current_student_id() - the caller's own note, never another's, plain text only.
- * It has no date (0066): WL does not say when it was written. It comes last.
+ * THE STUDIO'S NOTE (0067). The student's own WellnessLiving profile note, written
+ * by studio staff, is a public teacher_note to them with NO author - the database
+ * allows a null author only on a WL-linked note - so the same query returns it,
+ * and it comes back as one more group: `source: 'wellnessliving'`,
+ * `teacher_id: null`. It has no date (0066): WL does not say when it was written.
+ * It comes last.
  */
 export const dynamic = 'force-dynamic';
 
 interface NoteRow {
   id: string;
-  author_teacher_id: string;
+  /** Null only on the studio's WellnessLiving note (0067). */
+  author_teacher_id: string | null;
   body: string;
   created_at: string;
-}
-
-/** One row of `app.my_wl_note()` (migration 0066). */
-interface WlNoteRow {
-  note_text: string;
 }
 
 /** A teacher's notes to this student, or the studio's WellnessLiving note. */
@@ -132,7 +129,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // Group by teacher, preserving the newest-first order the query returned.
   const order: string[] = [];
   const byTeacher = new Map<string, { id: string; body: string; created_at: string }[]>();
+  const studioNotes: NoteRow[] = [];
   for (const n of notes) {
+    if (n.author_teacher_id === null) {
+      studioNotes.push(n);
+      continue;
+    }
     if (!byTeacher.has(n.author_teacher_id)) {
       byTeacher.set(n.author_teacher_id, []);
       order.push(n.author_teacher_id);
@@ -151,27 +153,42 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     notes: byTeacher.get(teacherId) ?? [],
   }));
 
-  // The studio's note about this student (0065) - at most one row.
-  const { data: wlRows, error: wlError } = await db.rpc('my_wl_note');
+  // The studio's notes about this student (0067) - one per WL note since 0068.
+  // Undated, so they cannot be placed among the teachers' groups by date; they go
+  // last, which also keeps `teachers[0]` a teacher for the dashboard card, and
+  // within the group they keep WL's order (the link's `position`).
+  if (studioNotes.length > 0) {
+    const { data: linkRows, error: linkError } = await db
+      .from('teacher_note_link')
+      .select('teacher_note_id, position')
+      .in(
+        'teacher_note_id',
+        studioNotes.map((n) => n.id),
+      );
 
-  if (wlError) {
-    return commit(
-      NextResponse.json(
-        { error: { code: 'query_failed', message: wlError.message } },
-        { status: 500 },
-      ),
+    if (linkError) {
+      return commit(
+        NextResponse.json(
+          { error: { code: 'query_failed', message: linkError.message } },
+          { status: 500 },
+        ),
+      );
+    }
+
+    const position = new Map(
+      ((linkRows ?? []) as { teacher_note_id: string; position: number }[]).map((l) => [
+        l.teacher_note_id,
+        l.position,
+      ]),
     );
-  }
 
-  const wl = ((wlRows ?? []) as WlNoteRow[])[0];
-  if (wl !== undefined) {
-    // Undated, so it cannot be placed among the teachers' groups by date; it goes
-    // last, which also keeps `teachers[0]` a teacher for the dashboard card.
     groups.push({
       teacher_id: null,
       source: 'wellnessliving',
       teacher_name: null,
-      notes: [{ id: 'wl', body: wl.note_text, created_at: null }],
+      notes: [...studioNotes]
+        .sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0))
+        .map((n) => ({ id: n.id, body: n.body, created_at: null })),
     });
   }
 

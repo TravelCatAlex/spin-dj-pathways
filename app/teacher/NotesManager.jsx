@@ -310,7 +310,8 @@ export default function NotesManager({ kind }) {
           {notes.map((note) => {
             const editing = editingId === note.id;
             const confirming = confirmingId === note.id;
-            // The student's WellnessLiving profile note (0065). Read-only: WL is its
+            // A WellnessLiving profile note (0067): a student's, or the teacher's own
+            // on the private tab. Read-only: WL is its
             // source, so there is no Edit, Delete or history here, and no date -
             // WL does not say when it was written (0066).
             const fromWl = note.source === 'wellnessliving';
@@ -321,7 +322,11 @@ export default function NotesManager({ kind }) {
                   <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     <Icon name="users" size={13} />
                     <span className="truncate">
-                      {note.student_name ?? 'student'} · From WellnessLiving
+                      {/* A private WL note is the teacher's own profile note (0067). */}
+                      {note.visibility === 'private'
+                        ? 'Your profile'
+                        : (note.student_name ?? 'student')}{' '}
+                      · From WellnessLiving
                     </span>
                   </div>
                   <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
