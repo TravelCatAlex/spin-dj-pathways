@@ -13,6 +13,10 @@ import { useTeacherLive } from './TeacherShell';
  * student (0063) as a label - the student is never shown it. A public note is about
  * one student from the roster and is the only kind that student will ever see.
  *
+ * The Public view also lists each roster student's WellnessLiving profile note
+ * (`from_wellness: true`, migrations 0067/0068) - the student sees that one too.
+ * Read-only and undated, because WL gives no date it was written.
+ *
  * NOTHING HERE DECIDES WHO MAY DO WHAT. Every call carries the viewer's JWT and
  * migrations 0056 and 0063's policies answer underneath - author-only writes, and
  * the roster rule on any note that names a student. A refused note (a student off
@@ -224,7 +228,7 @@ export default function NotesManager({ kind }) {
         </h2>
         <p className="text-sm text-muted">
           {isPublic
-            ? 'Shared with the one student each note is about. Only they can see it.'
+            ? 'Shared with the one student each note is about. Only they can see it. Notes from WellnessLiving appear here too, read-only.'
             : 'Your own notes, visible only to you. You can tag a student so you remember who a note is about.'}
         </p>
       </header>
@@ -306,6 +310,34 @@ export default function NotesManager({ kind }) {
           {notes.map((note) => {
             const editing = editingId === note.id;
             const confirming = confirmingId === note.id;
+            // A WellnessLiving profile note (0067): a student's, or the teacher's own
+            // on the private tab. Read-only: WL is its
+            // source, so there is no Edit, Delete or history here, and no date -
+            // WL does not say when it was written (0066).
+            const fromWl = note.from_wellness === true;
+
+            if (fromWl) {
+              return (
+                <li key={note.id} className="rounded-lg border border-line bg-purple-50/40 p-3">
+                  <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                    <Icon name="users" size={13} />
+                    <span className="truncate">
+                      {/* A private WL note is the teacher's own profile note (0067). */}
+                      {note.visibility === 'private'
+                        ? 'Your profile'
+                        : (note.student_name ?? 'student')}{' '}
+                      · From WellnessLiving profile
+                    </span>
+                  </div>
+                  {/* Trimmed: a note's own line breaks stay, a blank line before
+                      or after it does not. */}
+                  <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
+                  <p className="mt-2 text-xs text-muted">
+                    Edit it in WellnessLiving
+                  </p>
+                </li>
+              );
+            }
 
             return (
               <li key={note.id} className="rounded-lg border border-line p-3">
@@ -390,7 +422,7 @@ export default function NotesManager({ kind }) {
                   </div>
                 ) : (
                   <>
-                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
 
                     {confirming ? (
                       <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-rose-50 px-3 py-2">

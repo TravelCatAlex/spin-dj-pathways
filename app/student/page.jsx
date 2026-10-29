@@ -103,18 +103,21 @@ function useLatestNote() {
         const data = await response.json();
         if (cancelled) return;
 
-        const note = data.teachers?.[0]?.notes?.[0];
+        // A teacher's note only: the studio's WellnessLiving note has no coach
+        // and no date (0066).
+        const group = data.teachers?.find((t) => t.from_wellness !== true);
+        const note = group?.notes?.[0];
         if (!note) return;
 
         setLatest({
-          coach: data.teachers[0].teacher_name ?? 'Your teacher',
+          coach: group.teacher_name ?? 'Your teacher',
           coachAvatarUrl: null,
           date: new Date(note.created_at).toLocaleDateString('en-US', {
             month: 'long',
             day: 'numeric',
             year: 'numeric',
           }),
-          message: note.body,
+          message: note.body?.trim(),
         });
       } catch {
         // Leave the fixture in place - a failed fetch must not blank the card.
