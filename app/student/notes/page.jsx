@@ -83,9 +83,9 @@ export default function StudentNotesPage() {
           {state.status === 'ready' && state.teachers.length > 0 && (
             <div className="flex flex-col gap-6">
               {state.teachers.map((teacher) => {
-                // The studio's note from WellnessLiving (0065): its date is when it
-                // was first seen, not when it was written - WL does not say.
-                const fromStudio = teacher.source === 'wellnessliving';
+                // Notes from the student's WellnessLiving profile (`from_wellness`,
+                // only ever true). No date - WL does not say when it was written.
+                const fromStudio = teacher.from_wellness === true;
                 return (
                   <section
                     key={teacher.teacher_id ?? 'wellnessliving'}
@@ -93,16 +93,23 @@ export default function StudentNotesPage() {
                   >
                     <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
                       <Icon name="note" size={14} />
-                      {fromStudio ? 'From the studio' : (teacher.teacher_name ?? 'Your teacher')}
+                      {fromStudio
+                        ? 'From your WellnessLiving profile'
+                        : (teacher.teacher_name ?? 'Your teacher')}
                     </h2>
                     <ul className="flex flex-col gap-3">
                       {teacher.notes.map((note) => (
                         <li key={note.id} className="rounded-lg border border-line p-3">
-                          <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
-                          <p className="mt-2 text-xs text-muted">
-                            {fromStudio ? 'As of ' : ''}
-                            {formatWhen(note.created_at)}
+                          {/* Trimmed: only the line breaks INSIDE a note are kept, never a
+                              blank line before or after it. */}
+                          <p className="whitespace-pre-wrap text-sm text-ink">
+                            {note.body?.trim()}
                           </p>
+                          {!fromStudio && (
+                            <p className="mt-2 text-xs text-muted">
+                              {formatWhen(note.created_at)}
+                            </p>
+                          )}
                         </li>
                       ))}
                     </ul>

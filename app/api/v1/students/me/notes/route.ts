@@ -19,33 +19,35 @@ import { sessionSupabase } from '../../../../../lib/supabase-session';
  * READ-ONLY. A student reads their notes; they do not reply to or edit them. There
  * is no write policy a student could reach, and no POST here.
  *
- * THE STUDIO'S NOTE (0065). The student's own WellnessLiving profile note, written
- * by studio staff, comes back as one more group: `source: 'wellnessliving'`,
- * `teacher_id: null`. `app.my_wl_note()` is SECURITY DEFINER and keyed on
- * current_student_id() - the caller's own note, never another's, plain text only.
- * Its date is when the sync first saw the note; WL does not say when it was written.
+ * THE STUDIO'S NOTE (0067). The student's own WellnessLiving profile note, written
+ * by studio staff, is a public teacher_note to them with NO author - the database
+ * allows a null author only on a WL-linked note - so the same query returns it,
+ * and it comes back as one more group, `teacher_id: null` and `from_wellness: true`
+ * on the group and on each of its notes. Nothing else carries the flag. It has no
+ * date (0066): WL does not say when it was written. It comes last.
  */
 export const dynamic = 'force-dynamic';
 
 interface NoteRow {
   id: string;
-  author_teacher_id: string;
+  /** Null only on the studio's WellnessLiving note (0067). */
+  author_teacher_id: string | null;
   body: string;
   created_at: string;
-}
-
-/** One row of `app.my_wl_note()` (migration 0065). */
-interface WlNoteRow {
-  note_text: string;
-  note_seen_at: string;
 }
 
 /** A teacher's notes to this student, or the studio's WellnessLiving note. */
 interface NoteGroup {
   teacher_id: string | null;
-  source: 'teacher' | 'wellnessliving';
+  /**
+   * Present, and true, only on the group of notes from the student's own
+   * WellnessLiving profile - on the group and on each of its notes. A teacher's
+   * group and notes carry no flag.
+   */
+  from_wellness?: true;
   teacher_name: string | null;
-  notes: { id: string; body: string; created_at: string }[];
+  /** `created_at` is null for a WellnessLiving note: WL gives no date (0066). */
+  notes: { id: string; body: string; created_at: string | null; from_wellness?: true }[];
 }
 
 interface TeacherNameRow {
@@ -132,7 +134,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // Group by teacher, preserving the newest-first order the query returned.
   const order: string[] = [];
   const byTeacher = new Map<string, { id: string; body: string; created_at: string }[]>();
+  const studioNotes: NoteRow[] = [];
   for (const n of notes) {
+    if (n.author_teacher_id === null) {
+      studioNotes.push(n);
+      continue;
+    }
     if (!byTeacher.has(n.author_teacher_id)) {
       byTeacher.set(n.author_teacher_id, []);
       order.push(n.author_teacher_id);
@@ -146,36 +153,47 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const groups: NoteGroup[] = order.map((teacherId) => ({
     teacher_id: teacherId,
-    source: 'teacher',
     teacher_name: nameById.get(teacherId) ?? null,
     notes: byTeacher.get(teacherId) ?? [],
   }));
 
-  // The studio's note about this student (0065) - at most one row.
-  const { data: wlRows, error: wlError } = await db.rpc('my_wl_note');
+  // The studio's notes about this student (0067) - one per WL note since 0068.
+  // Undated, so they cannot be placed among the teachers' groups by date; they go
+  // last, which also keeps `teachers[0]` a teacher for the dashboard card, and
+  // within the group they keep WL's order (the link's `position`).
+  if (studioNotes.length > 0) {
+    const { data: linkRows, error: linkError } = await db
+      .from('teacher_note_link')
+      .select('teacher_note_id, position')
+      .in(
+        'teacher_note_id',
+        studioNotes.map((n) => n.id),
+      );
 
-  if (wlError) {
-    return commit(
-      NextResponse.json(
-        { error: { code: 'query_failed', message: wlError.message } },
-        { status: 500 },
-      ),
+    if (linkError) {
+      return commit(
+        NextResponse.json(
+          { error: { code: 'query_failed', message: linkError.message } },
+          { status: 500 },
+        ),
+      );
+    }
+
+    const position = new Map(
+      ((linkRows ?? []) as { teacher_note_id: string; position: number }[]).map((l) => [
+        l.teacher_note_id,
+        l.position,
+      ]),
     );
-  }
 
-  const wl = ((wlRows ?? []) as WlNoteRow[])[0];
-  if (wl !== undefined) {
-    const studio: NoteGroup = {
+    groups.push({
       teacher_id: null,
-      source: 'wellnessliving',
+      from_wellness: true,
       teacher_name: null,
-      notes: [{ id: 'wl', body: wl.note_text, created_at: wl.note_seen_at }],
-    };
-    // Groups are ordered by their newest note, so the studio's note goes before
-    // the first group whose newest note is older than it was seen.
-    const seen = Date.parse(wl.note_seen_at);
-    const at = groups.findIndex((g) => Date.parse(g.notes[0]?.created_at ?? '') < seen);
-    groups.splice(at === -1 ? groups.length : at, 0, studio);
+      notes: [...studioNotes]
+        .sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0))
+        .map((n) => ({ id: n.id, body: n.body, created_at: null, from_wellness: true as const })),
+    });
   }
 
   return commit(NextResponse.json({ teachers: groups }));

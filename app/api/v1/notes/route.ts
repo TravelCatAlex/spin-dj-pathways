@@ -4,17 +4,18 @@ import type { NextRequest } from 'next/server';
 import { sessionSupabase } from '../../../lib/supabase-session';
 
 /**
- * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, merged
- *                       newest first with the WellnessLiving profile notes of the
- *                       students they teach (0065, read-only, `source:
- *                       'wellnessliving'`).
+ * GET  /api/v1/notes  - the signed-in teacher's own notes, both kinds, newest
+ *                       first, followed by the WellnessLiving notes they may read:
+ *                       their students' and their own WL profile note (0067,
+ *                       read-only, `from_wellness: true`, no date - 0066).
  * POST /api/v1/notes  - create a note (private, optionally naming a student, or
  *                       public to a student).
  *
  * ============================ NO ID, SAME AS THE ROSTER ============================
  * The client below carries the VIEWER'S OWN JWT, so migrations 0056 and 0063's
- * policies decide everything. On GET, `teacher_note_author_select` returns only the
- * rows this teacher wrote. On POST, `teacher_note_author_insert`'s WITH CHECK
+ * policies decide everything. On GET, `teacher_note_author_select` returns the rows
+ * this teacher wrote, and `teacher_note_wl_student_select` (0067) adds the
+ * WellnessLiving notes of students they teach - nothing else. On POST, `teacher_note_author_insert`'s WITH CHECK
  * refuses any row whose `author_teacher_id` is not this teacher, and any note -
  * private or public - that names a student this teacher did not teach
  * (`app.teaches_student`). A handler that forgot a check would still be unable to
@@ -39,24 +40,21 @@ interface NoteRow {
   updated_at: string;
 }
 
-/** One row of `app.my_students_wl_notes()` (migration 0065). */
-interface WlNoteRow {
-  student_id: string;
-  student_name: string | null;
-  note_text: string;
-  note_seen_at: string;
-}
-
 /** A note as the teacher's tab receives it - their own, or a student's WL note. */
 interface NoteOut {
   id: string;
-  source: 'teacher' | 'wellnessliving';
+  /**
+   * Present, and true, only on a note copied from the student's (or this
+   * teacher's own) WellnessLiving profile. A note a teacher wrote has no flag.
+   */
+  from_wellness?: true;
   visibility: 'private' | 'public';
   student_id: string | null;
   student_name: string | null;
   body: string;
-  created_at: string;
-  updated_at: string;
+  /** Null for a WellnessLiving note: WL gives no date (0066). */
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface StudentNameRow {
@@ -175,56 +173,61 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]),
   );
 
-  // The WellnessLiving profile notes of this teacher's students (migration 0065).
-  // `app.my_students_wl_notes()` is SECURITY DEFINER and answers from the JWT
-  // alone: only students this teacher teaches, plain text only. The table under
-  // it has no policy, so this function is the only way these rows reach a teacher.
-  const { data: wlRows, error: wlError } = await db.rpc('my_students_wl_notes');
+  // Which of these came from WellnessLiving (0067). `teacher_note` above already
+  // returned them - the teacher's own WL note through the author policy, their
+  // students' through `teacher_note_wl_student_select` - and a link row is what
+  // marks them. The link exposes the note id and WL's display position (0068) -
+  // never the WL uid or note key.
+  const ids = notes.map((n) => n.id);
+  const linked = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: linkRows, error: linkError } = await db
+      .from('teacher_note_link')
+      .select('teacher_note_id, position')
+      .in('teacher_note_id', ids);
 
-  if (wlError) {
-    return commit(
-      NextResponse.json(
-        { error: { code: 'query_failed', message: wlError.message } },
-        { status: 500 },
-      ),
-    );
+    if (linkError) {
+      return commit(
+        NextResponse.json(
+          { error: { code: 'query_failed', message: linkError.message } },
+          { status: 500 },
+        ),
+      );
+    }
+    for (const l of (linkRows ?? []) as { teacher_note_id: string; position: number }[]) {
+      linked.set(l.teacher_note_id, l.position);
+    }
   }
 
-  const own: NoteOut[] = notes.map((n) => ({
+  const toOut = (n: NoteRow, fromWl: boolean): NoteOut => ({
     id: n.id,
-    source: 'teacher',
+    ...(fromWl ? { from_wellness: true as const } : {}),
     visibility: n.visibility,
     student_id: n.student_id,
     student_name: n.student_id === null ? null : (nameById.get(n.student_id) ?? null),
     body: n.body,
-    created_at: n.created_at,
-    updated_at: n.updated_at,
-  }));
+    // No date on a WL note: its created_at is when the sync copied it, not when it
+    // was written, and WL does not say (0066).
+    created_at: fromWl ? null : n.created_at,
+    updated_at: fromWl ? null : n.updated_at,
+  });
 
-  // Shown with the public notes: since 0065 the student reads their own WL note
-  // too, so "shared with the one student it is about" is exactly true of it.
-  // READ-ONLY - no route edits or deletes one; WellnessLiving is its source.
-  // `created_at` carries note_seen_at - when the sync first saw the note, since WL
-  // gives no written date - so the merged list sorts on one field; `source` tells
-  // the tab to label it "seen", never as the date it was written.
-  const fromWl: NoteOut[] = ((wlRows ?? []) as WlNoteRow[]).map((w) => ({
-    id: `wl:${w.student_id}`,
-    source: 'wellnessliving',
-    visibility: 'public',
-    student_id: w.student_id,
-    student_name: w.student_name,
-    body: w.note_text,
-    created_at: w.note_seen_at,
-    updated_at: w.note_seen_at,
-  }));
+  // The teacher's own notes newest first (the query's order), then the WL notes,
+  // which have no date to sort among them - by student name, the teacher's own
+  // profile notes first, and a client's several notes in WL's order (0068).
+  // READ-ONLY: WellnessLiving is their source, and the update policy refuses
+  // them (0067).
+  const own = notes.filter((n) => !linked.has(n.id)).map((n) => toOut(n, false));
+  const fromWl = notes
+    .filter((n) => linked.has(n.id))
+    .map((n) => toOut(n, true))
+    .sort(
+      (a, b) =>
+        (a.student_name ?? '').localeCompare(b.student_name ?? '') ||
+        (linked.get(a.id) ?? 0) - (linked.get(b.id) ?? 0),
+    );
 
-  // Newest first across both sources. Parsed, not compared as strings: the two
-  // sources' timestamps need not share an offset format.
-  const merged = [...own, ...fromWl].sort(
-    (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
-  );
-
-  return commit(NextResponse.json({ notes: merged }));
+  return commit(NextResponse.json({ notes: [...own, ...fromWl] }));
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

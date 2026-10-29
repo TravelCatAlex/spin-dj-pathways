@@ -14,8 +14,8 @@ import { useTeacherLive } from './TeacherShell';
  * one student from the roster and is the only kind that student will ever see.
  *
  * The Public view also lists each roster student's WellnessLiving profile note
- * (`source: 'wellnessliving'`, migration 0065) - the student sees that one too.
- * Read-only, and dated "seen", because WL gives no date it was written.
+ * (`from_wellness: true`, migrations 0067/0068) - the student sees that one too.
+ * Read-only and undated, because WL gives no date it was written.
  *
  * NOTHING HERE DECIDES WHO MAY DO WHAT. Every call carries the viewer's JWT and
  * migrations 0056 and 0063's policies answer underneath - author-only writes, and
@@ -310,10 +310,11 @@ export default function NotesManager({ kind }) {
           {notes.map((note) => {
             const editing = editingId === note.id;
             const confirming = confirmingId === note.id;
-            // The student's WellnessLiving profile note (0065). Read-only: WL is its
-            // source, so there is no Edit, Delete or history here, and its date is
-            // when the sync first saw it - WL does not say when it was written.
-            const fromWl = note.source === 'wellnessliving';
+            // A WellnessLiving profile note (0067): a student's, or the teacher's own
+            // on the private tab. Read-only: WL is its
+            // source, so there is no Edit, Delete or history here, and no date -
+            // WL does not say when it was written (0066).
+            const fromWl = note.from_wellness === true;
 
             if (fromWl) {
               return (
@@ -321,12 +322,18 @@ export default function NotesManager({ kind }) {
                   <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     <Icon name="users" size={13} />
                     <span className="truncate">
-                      {note.student_name ?? 'student'} · From WellnessLiving
+                      {/* A private WL note is the teacher's own profile note (0067). */}
+                      {note.visibility === 'private'
+                        ? 'Your profile'
+                        : (note.student_name ?? 'student')}{' '}
+                      · From WellnessLiving profile
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                  {/* Trimmed: a note's own line breaks stay, a blank line before
+                      or after it does not. */}
+                  <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
                   <p className="mt-2 text-xs text-muted">
-                    seen {formatWhen(note.created_at)} · edit it in WellnessLiving
+                    Edit it in WellnessLiving
                   </p>
                 </li>
               );
@@ -415,7 +422,7 @@ export default function NotesManager({ kind }) {
                   </div>
                 ) : (
                   <>
-                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body}</p>
+                    <p className="whitespace-pre-wrap text-sm text-ink">{note.body?.trim()}</p>
 
                     {confirming ? (
                       <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-rose-50 px-3 py-2">
