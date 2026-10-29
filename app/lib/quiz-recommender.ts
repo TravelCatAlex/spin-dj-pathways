@@ -211,10 +211,28 @@ function resolvePick(
   };
 }
 
+/**
+ * Icon names the LLM may assign to an interest tag. This is the subset of
+ * iconRegistry.js that makes sense for interests; the model picks from this
+ * list so every tag gets a meaningful, consistent icon.
+ */
+export const INTEREST_ICONS = [
+  'music', 'mic', 'headphones', 'mixer', 'video', 'film', 'play',
+  'superhero', 'gaming', 'youtube', 'star', 'heart', 'trophy',
+  'brain', 'sparkles', 'target', 'award',
+] as const;
+
+export type InterestIcon = (typeof INTEREST_ICONS)[number];
+
+export interface InterestTag {
+  tag: string;
+  icon: InterestIcon;
+}
+
 export interface RecommendationResult {
   suggestions: Recommendation[];
-  /** Short interest tags the model inferred from the answers. */
-  interests: string[];
+  /** Interest tags with LLM-assigned icons. */
+  interests: InterestTag[];
 }
 
 /**
@@ -230,23 +248,26 @@ export async function recommendCourses(
 
   const answerText = answers.map((a) => `Q: ${a.prompt}\nA: ${a.answer}`).join('\n\n');
 
+  const iconList = INTEREST_ICONS.join(', ');
+
   const system =
     `You help a music academy. From a student's quiz answers you (1) infer a few ` +
-    `short interest tags, and (2) suggest up to ${TOP_N} courses from a fixed ` +
-    'catalogue, best fit first. Every course you name must appear verbatim in the ' +
-    'catalogue - never invent a course or a teacher, and do not repeat a course. If ' +
-    'fewer than three fit well, return fewer. Respond with ONLY a JSON object, no ' +
-    'prose, no code fence.';
+    `short interest tags each with an icon, and (2) suggest up to ${TOP_N} courses ` +
+    'from a fixed catalogue, best fit first. Every course you name must appear ' +
+    'verbatim in the catalogue - never invent a course or a teacher, and do not ' +
+    'repeat a course. If fewer than three fit well, return fewer. Respond with ONLY ' +
+    'a JSON object, no prose, no code fence.';
 
   const prompt =
     `The student's quiz answers:\n${answerText}\n\n` +
     `The course catalogue (choose only from these):\n${catalogueText(catalogue)}\n\n` +
+    `Available icon names (pick the best fit for each interest):\n${iconList}\n\n` +
     `Return JSON of the form:\n` +
-    `{"interests": ["<3-6 short interest tags, 1-2 words each, drawn from the ` +
-    `answers including any free text>"], ` +
+    `{"interests": [{"tag": "<1-2 word interest>", "icon": "<icon name from the list above>"}], ` +
     `"suggestions": [{"course_title": "<exact course from the list>", ` +
     `"course_category": "<its category or null>", "teacher_name": "<its teacher or null>", ` +
     `"rationale": "<one or two sentences, friendly, addressed to the student>"}]}\n` +
+    `Return 3-6 interests drawn from the answers including any free text. ` +
     `List suggestions best-fit first, at most ${TOP_N}. If nothing fits, use an empty array.`;
 
   const { text: raw, model: usedModel } = await generate(system, prompt);
@@ -274,18 +295,21 @@ export async function recommendCourses(
     if (out.length >= TOP_N) break;
   }
 
-  // Interest tags: strings only, trimmed, de-duplicated, capped.
-  const interests: string[] = [];
+  // Interest tags with icons: de-duplicated, capped, icon validated.
+  const validIcons = new Set<string>(INTEREST_ICONS);
+  const interests: InterestTag[] = [];
   const seenInterest = new Set<string>();
   const rawInterests = Array.isArray(parsed.interests) ? parsed.interests : [];
   for (const item of rawInterests) {
-    if (typeof item !== 'string') continue;
-    const tag = item.trim();
+    // Accept both {tag, icon} objects and plain strings (backward compat).
+    const tag = (typeof item === 'string' ? item : (item as Record<string, unknown>)?.tag as string ?? '').trim();
+    const rawIcon = typeof item === 'string' ? 'star' : (item as Record<string, unknown>)?.icon;
+    const icon = (typeof rawIcon === 'string' && validIcons.has(rawIcon) ? rawIcon : 'star') as InterestIcon;
     if (tag === '' || tag.length > 40) continue;
     const key = tag.toLowerCase();
     if (seenInterest.has(key)) continue;
     seenInterest.add(key);
-    interests.push(tag);
+    interests.push({ tag, icon });
     if (interests.length >= 6) break;
   }
 
