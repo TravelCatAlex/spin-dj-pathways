@@ -253,9 +253,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const catalogue = await buildCatalogue();
     const { suggestions: recs, interests } = await recommendCourses(answerText, catalogue);
 
-    // Store the model's inferred interests on the attempt (shown on the home card).
+    // Store the tag names on the attempt (shown on the home card) and cache
+    // each tag's icon in interest_icon so repeated tags get a consistent icon.
     if (interests.length > 0) {
-      await admin.from('quiz_attempt').update({ interests }).eq('id', attempt.id);
+      const tagNames = interests.map((i) => i.tag);
+      await admin.from('quiz_attempt').update({ interests: tagNames }).eq('id', attempt.id);
+
+      // Upsert icons: existing tags keep their icon, new tags get the LLM's pick.
+      await admin.from('interest_icon').upsert(
+        interests.map((i) => ({ tag: i.tag.toLowerCase(), icon: i.icon })),
+        { onConflict: 'tag', ignoreDuplicates: true },
+      );
     }
 
     if (recs.length > 0) {

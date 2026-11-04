@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { sessionSupabase } from '../../../../../lib/supabase-session';
+import { serverSupabase } from '../../../../../lib/supabase';
 
 /**
  * GET /api/v1/students/me/interests - the signed-in student's interests.
@@ -64,10 +65,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const tags = ((attempts as { interests: string[] | null }[] | null)?.[0]?.interests) ?? [];
 
+  // Look up cached icons from interest_icon (service role — this table has no RLS policy for students).
+  const iconMap = new Map<string, string>();
+  if (tags.length > 0) {
+    const admin = serverSupabase();
+    const lowerTags = tags.map((t) => t.toLowerCase());
+    const { data: iconRows } = await admin
+      .from('interest_icon')
+      .select('tag, icon')
+      .in('tag', lowerTags);
+    for (const row of (iconRows as { tag: string; icon: string }[] | null) ?? []) {
+      iconMap.set(row.tag, row.icon);
+    }
+  }
+
   const interests = tags.map((name, i) => ({
     id: `${slug(name) || 'interest'}-${i}`,
     name,
-    icon: 'music',
+    icon: iconMap.get(name.toLowerCase()) ?? 'star',
     accent: ACCENTS[i % ACCENTS.length],
   }));
 
